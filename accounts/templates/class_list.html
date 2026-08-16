@@ -161,7 +161,7 @@
       <h1>All Classes</h1>
       <p>{{ classes|length }} class{{ classes|length|pluralize:"es" }} available</p>
     </div>
-    <a href="#" class="cl-add-btn">
+    <a href="{% url 'class_add' %}" class="cl-add-btn">
       <i class="ti ti-plus"></i>
       Add Class
     </a>

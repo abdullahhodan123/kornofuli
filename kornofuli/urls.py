@@ -15,10 +15,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.conf import settings
-from django.conf.urls.static import static
-
+from django.views.static import serve
+import re
 
 
 urlpatterns = [
@@ -28,8 +28,27 @@ urlpatterns = [
     path('reports/', include('reports.urls')),
     path('',include('home.urls'))
 ]
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL,
-                          document_root=settings.MEDIA_ROOT)
-    
+
+# Media ফাইল (শিক্ষক ছবি, gallery) — dev/prod যেকোনো পরিবেশে serve হবে।
+# Django 6-এর static() DEBUG=False-এ ফাঁকা list ফেরত দেয় (No-op), তাই সরাসরি
+# serve view দিয়ে pattern বানানো হয়েছে। বাস্তব production-এ nginx/caddy থাকলে
+# এই ব্লক মুছে দিলেই চলবে।
+media_url = settings.MEDIA_URL.lstrip('/')
+urlpatterns += [
+    re_path(
+        r'^%s(?P<path>.*)$' % re.escape(media_url),
+        serve,
+        kwargs={'document_root': settings.MEDIA_ROOT}
+    ),
+]
+
+# PWA/static ফাইল (manifest, icons, sw.js) — media-র মতোই serve হবে।
+static_url = settings.STATIC_URL.lstrip('/')
+urlpatterns += [
+    re_path(
+        r'^%s(?P<path>.*)$' % re.escape(static_url),
+        serve,
+        kwargs={'document_root': settings.BASE_DIR / 'static'}
+    ),
+]
 

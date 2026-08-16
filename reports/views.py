@@ -17,22 +17,6 @@ def _parse_last_n(request):
 
 @never_cache
 @login_required
-def student_dashboard(request):
-    if request.user.role != 'student':
-        raise PermissionDenied
-    student = get_object_or_404(
-        Student.objects.select_related('classroom', 'user'),
-        user=request.user,
-        is_approved=True,
-    )
-    last_n  = _parse_last_n(request)
-    context = get_full_report(student, last_n)
-    context['is_own'] = True
-    return render(request, 'student_dashboard.html', context)
-
-
-@never_cache
-@login_required
 def teacher_student_report(request, student_id):
     if request.user.role != 'teacher':
         raise PermissionDenied

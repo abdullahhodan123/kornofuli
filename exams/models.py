@@ -75,14 +75,12 @@ class Result(models.Model):
         return sum(
             float(entry.marks_obtained)
             for entry in self.mark_entries.select_related('subject').all()
-            if not entry.subject.is_optional
         )
 
     def total_full_marks(self):
         return sum(
             entry.subject.full_marks
             for entry in self.mark_entries.select_related('subject').all()
-            if not entry.subject.is_optional
         )
 
     def percentage(self):

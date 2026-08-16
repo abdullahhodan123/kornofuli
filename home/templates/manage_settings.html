@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Site Settings{% endblock %}
+
+{% block extra_css %}
+<style>
+  .m-page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+  }
+
+  .m-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--blue-main);
+    text-decoration: none;
+    margin-bottom: 1.2rem;
+    transition: color 0.15s;
+  }
+  .m-back-btn:hover { color: var(--blue-dark); }
+
+  .m-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+  }
+
+  .m-page-header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--blue-dark);
+    margin-bottom: 4px;
+  }
+
+  .m-page-header p { font-size: 13.5px; color: var(--gray-muted); }
+
+  .m-card {
+    background: var(--white);
+    border: 1px solid var(--gray-border);
+    border-radius: var(--radius);
+    padding: 1.6rem;
+  }
+
+  .m-card h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--gray-text);
+    margin-bottom: 14px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .field input, .field select, .field textarea {
+    border: 0.5px solid var(--gray-border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: 13.5px;
+    color: var(--gray-text);
+    font-family: inherit;
+    background: #FAFAF8;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--blue-mid);
+    box-shadow: 0 0 0 3px rgba(55,138,221,0.12);
+    background: var(--white);
+  }
+  .field .errors { font-size: 11.5px; color: var(--red-text); }
+  .field input[type="checkbox"] { width: auto; }
+  .field .help { font-size: 11px; color: var(--gray-muted); }
+
+  .m-actions { display: flex; gap: 10px; margin-top: 0.5rem; }
+  .m-submit {
+    padding: 10px 22px;
+    background: var(--blue-main);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .m-submit:hover { background: var(--blue-dark); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="m-page">
+
+  <a href="{% url 'home' %}" class="m-back-btn">
+    <i class="ti ti-arrow-left"></i>
+    Back to Home
+  </a>
+
+  <div class="m-page-header">
+    <div>
+      <h1>Site Settings</h1>
+      <p>Edit academy information, contact details, hero and stats</p>
+    </div>
+  </div>
+
+  <div class="m-card">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="grid-2">
+        {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<span class="errors">{{ field.errors|join:", " }}</span>{% endif %}
+          {% if field.help_text %}<span class="help">{{ field.help_text }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="m-actions">
+        <button class="m-submit" type="submit">Save Settings</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

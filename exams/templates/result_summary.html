@@ -119,6 +119,9 @@
   <a href="{% url 'exams:exam_mark_entry' exam.pk %}" class="btn btn-outline">
     <i class="ti ti-edit"></i> নম্বর সম্পাদনা
   </a>
+  <a href="{% url 'exams:exam_result_pdf' exam.pk %}" class="btn btn-outline">
+    <i class="ti ti-download"></i> PDF Download
+  </a>
   <a href="{% url 'exams:exam_detail' exam.pk %}" class="btn btn-outline">
     <i class="ti ti-arrow-left"></i> Exam Detail
   </a>

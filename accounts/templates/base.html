@@ -4,6 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}{{ settings.academy_name|default:"KSA" }}{% endblock %}</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="{% url 'pwa_manifest' %}">
+  <meta name="theme-color" content="#0C447C">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KSA">
+  <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="/static/icons/icon-192.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -239,6 +250,7 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      min-width: 0;
     }
 
     /* ── Topbar ── */
@@ -312,6 +324,7 @@
     .ksa-content {
       flex: 1;
       padding: 28px 32px;
+      min-width: 0;
     }
 
     /* ── Footer ── */
@@ -448,13 +461,10 @@
             <i class="ti ti-users"></i> Student List
           </a>
 
-          <!-- ✅ Pending Students -->
-          <a href="{% url 'pending_students' %}"
-             class="ksa-nav-item {% if request.resolver_match.url_name == 'pending_students' %}active{% endif %}">
-            <i class="ti ti-user-check"></i> Pending Students
-            {% if pending_students_count %}
-              <span class="ksa-nav-badge">{{ pending_students_count }}</span>
-            {% endif %}
+          <!-- Add Student -->
+          <a href="{% url 'add_student' %}"
+             class="ksa-nav-item {% if request.resolver_match.url_name == 'add_student' %}active{% endif %}">
+            <i class="ti ti-user-plus"></i> Add Student
           </a>
 
           <a href="{% url 'exams:exam_list' %}"
@@ -467,15 +477,44 @@
             <i class="ti ti-circle-plus"></i> New Exam
           </a>
         </div>
-        {% endif %}
 
         <div class="ksa-nav-section">
-          <div class="ksa-nav-section-label">Account</div>
-          <a href="{% url 'reports:student_dashboard' %}"
-             class="ksa-nav-item {% if 'dashboard' in request.resolver_match.url_name %}active{% endif %}">
-            <i class="ti ti-layout-dashboard"></i> Dashboard
+          <div class="ksa-nav-section-label">Manage Website</div>
+
+          <a href="{% url 'manage_settings' %}"
+             class="ksa-nav-item {% if request.resolver_match.url_name == 'manage_settings' %}active{% endif %}">
+            <i class="ti ti-settings"></i> Site Settings
+          </a>
+          <a href="{% url 'manage_content' 'course' %}"
+             class="ksa-nav-item {% if 'course' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-book-2"></i> Courses
+          </a>
+          <a href="{% url 'manage_content' 'teacher' %}"
+             class="ksa-nav-item {% if 'teacher' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-school"></i> Teachers
+          </a>
+          <a href="{% url 'manage_content' 'result' %}"
+             class="ksa-nav-item {% if 'result' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-trophy"></i> Results
+          </a>
+          <a href="{% url 'manage_content' 'gallery' %}"
+             class="ksa-nav-item {% if 'gallery' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-photo"></i> Gallery
+          </a>
+          <a href="{% url 'manage_content' 'faq' %}"
+             class="ksa-nav-item {% if 'faq' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-help-circle"></i> FAQs
+          </a>
+          <a href="{% url 'manage_content' 'schedule' %}"
+             class="ksa-nav-item {% if 'schedule' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-calendar-event"></i> Batch Schedule
+          </a>
+          <a href="{% url 'manage_content' 'notice' %}"
+             class="ksa-nav-item {% if 'notice' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="ti ti-bell"></i> Notices
           </a>
         </div>
+        {% endif %}
 
         <div class="ksa-sidebar-footer">
           <div style="padding: 0 8px 8px; font-size: 11px; color: rgba(168,205,238,0.4);">
@@ -488,12 +527,9 @@
 
       {% else %}
         <div class="ksa-sidebar-footer">
-          <a href="{% url 'login' %}" class="ksa-nav-item" style="margin-bottom: 6px;">
-            <i class="ti ti-login-2"></i> Login
-          </a>
-          <a href="{% url 'student_register' %}" class="ksa-nav-item ksa-nav-register">
-            <i class="ti ti-user-plus"></i> Register Now
-          </a>
+          <div style="padding: 0 8px 8px; font-size: 11px; color: rgba(168,205,238,0.4);">
+            Teachers log in at /accounts/login/
+          </div>
         </div>
       {% endif %}
     </aside>
@@ -573,5 +609,15 @@
   </script>
 
   {% block extra_js %}{% endblock %}
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('{% url 'pwa_sw' %}').catch(function (err) {
+          console.error('Service Worker registration failed:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>

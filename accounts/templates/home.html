@@ -769,8 +769,8 @@
     .ks-section { padding: 44px 24px; }
     .stats-bar { grid-template-columns: repeat(2, 1fr); }
     .stat-cell:nth-child(2) { border-right: none; }
-    .stat-cell:nth-child(3) { border-bottom: none; border-right: 1px solid var(--gray-border); }
-    .stat-cell:nth-child(4) { border-bottom: none; border-right: none; }
+    .stat-cell:nth-child(3) { border-top: 1px solid var(--gray-border); border-right: 1px solid var(--gray-border); }
+    .stat-cell:nth-child(4) { border-top: 1px solid var(--gray-border); border-right: none; }
     .loc-grid { grid-template-columns: 1fr; }
     .tq-card { flex-direction: column; }
     .tq-photo-col { width: 100%; flex-direction: row; padding: 18px 20px; gap: 16px; border-bottom: 1px solid var(--gray-border); }
@@ -785,6 +785,32 @@
     .cta-band { padding: 48px 20px; }
     .cta-heading { font-size: 22px; }
     .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 480px) {
+    #hero { padding: 44px 16px 40px; }
+    .ks-section { padding: 32px 14px; }
+    .ks-section-heading { font-size: 20px; }
+    .hero-badge { font-size: 11px; padding: 4px 12px; }
+
+    .hero-btns, .cta-btns { flex-direction: column; }
+    .ksa-btn { width: 100%; justify-content: center; padding: 11px 16px; }
+
+    .notice-body-wrap { gap: 10px; padding: 13px 14px; }
+    .notice-icon { width: 34px; height: 34px; font-size: 16px; }
+    .notice-title { font-size: 13.5px; }
+
+    .course-footer { flex-direction: column; align-items: flex-start; gap: 6px; }
+
+    .result-val { font-size: 26px; }
+
+    .tq-photo-frame { width: 92px; height: 92px; }
+    .tq-right { padding: 16px; }
+    .tq-qmark { font-size: 40px; }
+
+    .loc-row { padding: 12px 13px; }
+    .stat-num { font-size: 24px; }
+    .stat-lbl { font-size: 10.5px; }
   }
 </style>
 {% endblock %}
@@ -1189,7 +1215,7 @@ function openEdit(pk, title, body, type, pinned) {
           <img src="/media/teachers/ChatGPT_Image_Jun_22_2026_08_29_37_PM.png"
      alt="মো. রবেল স্যার"
      style="width:100%; height:100%; object-fit:cover; display:block;">
-          <div class="tq-photo-initials" style="display:none; background:#C0DD97; color:#27500A; width:180%; height:180%;">র</div>
+          <div class="tq-photo-initials" style="display:none; background:#C0DD97; color:#27500A; width:100%; height:100%;">র</div>
         </div>
         <div class="tq-subject-label" style="color: #3B6D11;">ইংরেজি শিক্ষক</div>
       </div>

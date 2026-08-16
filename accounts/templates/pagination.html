@@ -1,0 +1,98 @@
+{% if page_obj.paginator.num_pages > 1 %}
+<style>
+  .m-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 1.2rem;
+  }
+
+  .m-pg-info {
+    font-size: 12.5px;
+    color: var(--gray-muted);
+  }
+
+  .m-pg-links {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .m-pg-links a,
+  .m-pg-current {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 7px;
+    font-size: 13px;
+    text-decoration: none;
+    box-sizing: border-box;
+  }
+
+  .m-pg-links a {
+    background: var(--white);
+    border: 0.5px solid var(--gray-border);
+    color: var(--blue-main);
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .m-pg-links a:hover {
+    background: var(--blue-pale);
+    border-color: var(--blue-light);
+  }
+
+  .m-pg-current {
+    background: var(--blue-main);
+    border: 0.5px solid var(--blue-main);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .m-pg-dots {
+    color: var(--gray-muted);
+    padding: 0 2px;
+  }
+
+  .m-pg-nav {
+    font-weight: 500;
+  }
+</style>
+
+<nav class="m-pagination" aria-label="Pagination">
+  <span class="m-pg-info">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} items)
+  </span>
+
+  <div class="m-pg-links">
+    {% if page_obj.has_previous %}
+      <a class="m-pg-nav" href="{% querystring page=page_obj.previous_page_number %}">
+        <i class="ti ti-chevron-left"></i> Prev
+      </a>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <span class="m-pg-current">{{ num }}</span>
+      {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+        <a href="{% querystring page=num %}">{{ num }}</a>
+      {% elif num == 1 or num == page_obj.paginator.num_pages %}
+        <a href="{% querystring page=num %}">{{ num }}</a>
+      {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
+        <span class="m-pg-dots">&hellip;</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <a class="m-pg-nav" href="{% querystring page=page_obj.next_page_number %}">
+        Next <i class="ti ti-chevron-right"></i>
+      </a>
+    {% endif %}
+  </div>
+</nav>
+{% endif %}

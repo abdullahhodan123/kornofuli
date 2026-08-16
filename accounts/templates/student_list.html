@@ -89,7 +89,7 @@
     background: var(--white);
     border: 1px solid var(--gray-border);
     border-radius: var(--radius);
-    overflow: hidden;
+    overflow-x: auto;
   }
 
   .ksa-table-toolbar {
@@ -121,6 +121,7 @@
 
   table {
     width: 100%;
+    min-width: 720px;
     border-collapse: collapse;
     font-size: 13.5px;
   }
@@ -244,6 +245,15 @@
     opacity: 0.5;
     pointer-events: none;
   }
+
+  @media (max-width: 640px) {
+    .ksa-page { padding: 1.25rem 0.75rem; }
+    .ksa-page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .ksa-page-header-left h1 { font-size: 20px; }
+    .ksa-summary { grid-template-columns: 1fr; gap: 10px; }
+    .ksa-table-toolbar { padding: 10px 12px; }
+    thead th, tbody td { padding: 11px 12px; }
+  }
 </style>
 {% endblock %}
 
@@ -255,16 +265,21 @@
     Back to Classes
   </a>
 
-  <div class="ksa-page-header">
-    <div class="ksa-page-header-left">
-      <h1>{{ classroom.name }}</h1>
-      <p>Student list for {{ month|date:"F" }} {{ year }}</p>
+    <div class="ksa-page-header">
+      <div class="ksa-page-header-left">
+        <h1>{{ classroom.name }}</h1>
+        <p>Student list for {{ month|date:"F" }} {{ year }}</p>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="ksa-badge">
+          <i class="ti ti-users"></i>
+          {{ total_count }} Students
+        </span>
+        <a href="{% url 'add_student' %}" class="ksa-back-btn" style="margin-bottom: 0;">
+          <i class="ti ti-user-plus"></i> Add Student
+        </a>
+      </div>
     </div>
-    <span class="ksa-badge">
-      <i class="ti ti-users"></i>
-      {{ student_data|length }} Students
-    </span>
-  </div>
 
   <!-- Summary -->
   <div class="ksa-summary">
@@ -273,7 +288,7 @@
         <i class="ti ti-users"></i>
       </div>
       <div>
-        <div class="num">{{ student_data|length }}</div>
+        <div class="num">{{ total_count }}</div>
         <div class="lbl">Total Students</div>
       </div>
     </div>
@@ -365,6 +380,8 @@
     </div>
     {% endif %}
   </div>
+
+  {% include "pagination.html" %}
 
 </div>
 

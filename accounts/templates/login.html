@@ -172,14 +172,11 @@
         <a class="side-link active" href="{% url 'login' %}">
           <i class="ti ti-login" aria-hidden="true"></i> Login
         </a>
-        <a class="side-link" href="{% url 'student_register' %}">
-          <i class="ti ti-user-plus" aria-hidden="true"></i> Student signup
-        </a>
       </nav>
 
       <div class="side-notice">
-        <strong>Note for students</strong><br>
-        Your account needs admin approval before you can login.
+        <strong>Teacher access</strong><br>
+        This panel is only for coaching center teachers.
       </div>
     </aside>
 
@@ -228,9 +225,6 @@
         </button>
       </form>
 
-      <div class="bottom-link">
-        New here? <a href="{% url 'student_register' %}">Register as student</a>
-      </div>
     </section>
 
   </div>

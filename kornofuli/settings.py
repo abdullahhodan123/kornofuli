@@ -144,15 +144,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 AUTH_USER_MODEL = 'accounts.User'
 
 BULKSMS_API_KEY = config("BULKSMS_API_KEY")
 BULKSMS_SENDER_ID = config("BULKSMS_SENDER_ID")
-
-# usernmae:kornofuli@admin
-# password:Hodan@1234567890
 
 
 

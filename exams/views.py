@@ -1,22 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db import transaction
+from django.http import HttpResponse
 import threading
 from .models import Exam, Subject, Result, MarkEntry
 from .utils import update_exam_serials
+from .pdf_utils import build_exam_result_pdf
 from accounts.models import Student, ClassRoom
-from accounts.views import send_sms  # ✅ send_sms import
-
-
-def teacher_required(view_func):
-    @login_required
-    def wrapper(request, *args, **kwargs):
-        if request.user.role != 'teacher':
-            messages.error(request, 'শুধুমাত্র Teacher প্রবেশ করতে পারবেন।')
-            return redirect('home')
-        return view_func(request, *args, **kwargs)
-    return wrapper
+from accounts.views import send_sms, teacher_required  # ✅ shared decorator + SMS
 
 
 # ─────────────────────────────────────────
@@ -102,8 +95,10 @@ f"কর্ণফুলী বিজ্ঞান একাডেমি"
 
 @teacher_required
 def exam_list(request):
-    exams = Exam.objects.filter(created_by=request.user).prefetch_related('subjects', 'results')
-    return render(request, 'exam_list.html', {'exams': exams})
+    exams   = Exam.objects.filter(created_by=request.user).prefetch_related('subjects', 'results')
+    paginator = Paginator(exams, 6)
+    page_obj  = paginator.get_page(request.GET.get('page'))
+    return render(request, 'exam_list.html', {'exams': page_obj.object_list, 'page_obj': page_obj})
 
 
 @teacher_required
@@ -249,3 +244,21 @@ def exam_result_summary(request, exam_pk):
         'exam': exam, 'subjects': subjects,
         'results': results, 'subject_summary': subject_summary
     })
+
+
+@teacher_required
+def exam_result_pdf(request, exam_pk):
+    exam     = get_object_or_404(Exam, pk=exam_pk, created_by=request.user)
+    subjects = list(exam.subjects.all())
+    results  = (
+        Result.objects.filter(exam=exam)
+        .prefetch_related('mark_entries__subject', 'student')
+        .order_by('serial')
+    )
+
+    buf = build_exam_result_pdf(exam, results, subjects)
+
+    filename = f"{exam.name}_result_sheet.pdf".replace(' ', '_')
+    response = HttpResponse(buf.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response

@@ -5,6 +5,7 @@ from datetime import datetime
 from django.shortcuts import render, get_object_or_404
 from .models import Student, Payment, ClassRoom, Attendance
 from django.http import JsonResponse
+from django.core.paginator import Paginator
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from datetime import date, time, datetime
@@ -14,11 +15,25 @@ import threading
 from django.conf import settings
  
 from .forms import (
-    StudentRegistrationForm,
-    TeacherRegistrationForm,
+    StudentAddForm,
+    ClassRoomForm,
     UserLoginForm
 )
 
+
+
+# ─────────────────────────────────────────
+#  Authorization
+# ─────────────────────────────────────────
+
+def teacher_required(view_func):
+    @login_required
+    def wrapper(request, *args, **kwargs):
+        if request.user.role != 'teacher':
+            messages.error(request, 'শুধুমাত্র Teacher প্রবেশ করতে পারবেন।')
+            return redirect('home')
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 
 # ─────────────────────────────────────────
@@ -116,49 +131,41 @@ def send_payment_sms_async(student, month, year):
 #  Auth Views
 # ─────────────────────────────────────────
  
-def student_register(request):
+@teacher_required
+def add_student(request):
+    """Teacher নতুন student account বানায়। Student নিজে register করতে পারবে না।"""
     if request.method == 'POST':
-        form = StudentRegistrationForm(request.POST)
+        form = StudentAddForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Registration successful. Wait for approval.")
-            return redirect('login')
+            user = form.save()
+            student = user.student
+            messages.success(request, f"{student.full_name} added successfully.")
+            return redirect('student_list', class_id=student.classroom_id)
     else:
-        form = StudentRegistrationForm()
- 
-    return render(request, 'Student_reg.html', {'form': form})
- 
- 
-def teacher_register(request):
-    if request.method == 'POST':
-        form = TeacherRegistrationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Teacher account created successfully.")
-            return redirect('login')
-    else:
-        form = TeacherRegistrationForm()
- 
-    return render(request, 'teacher_reg.html', {'form': form})
- 
- 
+        form = StudentAddForm()
+
+    return render(request, 'add_student.html', {'form': form})
+
+
 def user_login(request):
     if request.method == 'POST':
         form = UserLoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
- 
+
             if user.role == 'student':
-                if not user.student.is_approved:
-                    messages.error(request, "Your account is not approved yet.")
-                    return redirect('login')
- 
+                messages.error(
+                    request,
+                    "Student login is disabled. Only teachers can access the panel."
+                )
+                return redirect('login')
+
             login(request, user)
             messages.success(request, "Login successful.")
             return redirect('home')
     else:
         form = UserLoginForm()
- 
+
     return render(request, 'login.html', {'form': form})
  
  
@@ -176,11 +183,28 @@ def user_logout(request):
 #     return render(request, 'home.html')
  
  
+@teacher_required
 def class_list(request):
     classes = ClassRoom.objects.all()
     return render(request, 'class_list.html', {'classes': classes})
- 
- 
+
+
+@teacher_required
+def add_class(request):
+    """Teacher নতুন class বানায়।"""
+    if request.method == 'POST':
+        form = ClassRoomForm(request.POST)
+        if form.is_valid():
+            room = form.save()
+            messages.success(request, f"{room.name} added successfully.")
+            return redirect('class_list')
+    else:
+        form = ClassRoomForm()
+
+    return render(request, 'class_add.html', {'form': form})
+
+
+@teacher_required
 def student_list(request, class_id):
     now = datetime.now()
     current_month = now.month
@@ -190,10 +214,13 @@ def student_list(request, class_id):
     students  = Student.objects.filter(
         classroom=classroom,
         is_approved=True
-    ).select_related('user', 'classroom')
- 
+    ).select_related('user', 'classroom').order_by('full_name')
+
+    paginator = Paginator(students, 10)
+    page_obj  = paginator.get_page(request.GET.get('page'))
+
     student_data = []
-    for student in students:
+    for student in page_obj.object_list:
         is_paid = Payment.objects.filter(
             student=student,
             month=current_month,
@@ -201,20 +228,29 @@ def student_list(request, class_id):
             is_paid=True
         ).exists()
         student_data.append({'student': student, 'is_paid': is_paid})
- 
-    paid_count = sum(1 for item in student_data if item['is_paid'])
- 
+
+    total_count = paginator.count
+    paid_count = Payment.objects.filter(
+        student__classroom=classroom,
+        month=current_month,
+        year=current_year,
+        is_paid=True
+    ).distinct().count()
+
     context = {
         'classroom':    classroom,
         'student_data': student_data,
         'month':        current_month,
         'year':         current_year,
         'paid_count':   paid_count,
-        'unpaid_count': len(student_data) - paid_count,
+        'unpaid_count': total_count - paid_count,
+        'total_count':  total_count,
+        'page_obj':     page_obj,
     }
     return render(request, 'student_list.html', context)
  
  
+@teacher_required
 @require_POST
 def mark_payment(request, student_id):
     now     = datetime.now()
@@ -242,7 +278,7 @@ def mark_payment(request, student_id):
 #  Attendance View  (SMS যোগ করা হয়েছে)
 # ─────────────────────────────────────────
  
-@login_required
+@teacher_required
 def take_attendance(request, classroom_id):
     classroom = get_object_or_404(ClassRoom, id=classroom_id)
     students  = Student.objects.filter(classroom=classroom, is_approved=True).order_by('full_name')
@@ -298,46 +334,3 @@ def take_attendance(request, classroom_id):
         'total_late':      sum(s['late']    for s in student_summary),
     }
     return render(request, 'take_attendance.html', context)
-
-
-
-
-
-# ─────────────────────────────────────────
-#  Teacher Panel — Student Approval
-# ─────────────────────────────────────────
-
-@login_required
-def pending_students(request):
-    # শুধু teacher রাই access করতে পারবে
-    if request.user.role != 'teacher':
-        messages.error(request, "Access denied.")
-        return redirect('home')
-
-    pending = Student.objects.filter(is_approved=False).select_related('user', 'classroom')
-
-    context = {
-        'pending_students': pending,
-    }
-    return render(request, 'pending_students.html', context)
-
-
-@login_required
-@require_POST
-def approve_student(request, student_id):
-    if request.user.role != 'teacher':
-        return JsonResponse({'error': 'Access denied'}, status=403)
-
-    student = get_object_or_404(Student, id=student_id)
-    action  = request.POST.get('action')  # 'approve' or 'reject'
-
-    if action == 'approve':
-        student.is_approved = True
-        student.save()
-        return JsonResponse({'status': 'approved', 'name': student.full_name})
-
-    elif action == 'reject':
-        student.user.delete()  # Student + User দুটোই delete হবে (CASCADE)
-        return JsonResponse({'status': 'rejected'})
-
-    return JsonResponse({'error': 'Invalid action'}, status=400)
