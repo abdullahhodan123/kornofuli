@@ -145,8 +145,32 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+
+USE_SUPABASE_STORAGE = config("USE_SUPABASE_STORAGE", default=False, cast=bool)
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+if USE_SUPABASE_STORAGE:
+    STORAGES["default"]["BACKEND"] = "storages.backends.s3boto3.S3Boto3Storage"
+    AWS_STORAGE_BUCKET_NAME = config("STORAGE_BUCKET_NAME")
+    AWS_S3_ENDPOINT_URL = config("SUPABASE_STORAGE_S3_ENDPOINT")
+    AWS_S3_REGION_NAME = config("STORAGE_REGION", default="ap-south-1")
+    AWS_ACCESS_KEY_ID = config("STORAGE_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = config("STORAGE_SECRET_ACCESS_KEY")
+    AWS_S3_CUSTOM_DOMAIN = config("SUPABASE_STORAGE_CUSTOM_DOMAIN")
+    AWS_QUERYSTRING_AUTH = False
+    MEDIA_URL = f"https://{config('SUPABASE_STORAGE_CUSTOM_DOMAIN')}/"
+    MEDIA_ROOT = None
+else:
+    MEDIA_URL = 'media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 AUTH_USER_MODEL = 'accounts.User'
 
 BULKSMS_API_KEY = config("BULKSMS_API_KEY")
