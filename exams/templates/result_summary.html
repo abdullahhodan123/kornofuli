@@ -109,6 +109,25 @@
     display: inline-flex; align-items: center; gap: 4px;
     font-size: 13px; font-weight: 700; color: var(--blue-dark);
   }
+
+  .grade-grid {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px;
+  }
+  .grade-chip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; border-radius: var(--radius-sm);
+    background: var(--white); border: 0.5px solid var(--gray-border);
+    min-width: 80px;
+  }
+  .grade-chip .g-letter {
+    font-size: 18px; font-weight: 800; line-height: 1;
+  }
+  .grade-chip .g-count {
+    font-size: 22px; font-weight: 700; color: var(--gray-text); line-height: 1;
+  }
+  .grade-chip .g-label {
+    font-size: 11px; color: var(--gray-muted);
+  }
 </style>
 {% endblock %}
 
@@ -138,20 +157,37 @@
     <div class="stat-label">মোট Subject</div>
   </div>
   <div class="stat-card">
-    <div class="stat-val" style="color:var(--green-text);">
-      {% with pass_count=0 %}
-        {% for r in results %}{% if not r.is_failed %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
-      {% endwith %}
-    </div>
+    <div class="stat-val" style="color:var(--green-text);">{{ pass_count }}</div>
     <div class="stat-label">Pass</div>
   </div>
   <div class="stat-card">
-    <div class="stat-val" style="color:var(--red-text);">
-      {% for r in results %}{% if r.is_failed %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
-    </div>
+    <div class="stat-val" style="color:var(--red-text);">{{ fail_count }}</div>
     <div class="stat-label">Fail</div>
   </div>
 </div>
+
+<!-- Grade Breakdown -->
+{% if grade_breakdown %}
+<div class="grade-grid">
+  {% for grade, count in grade_breakdown %}
+  <div class="grade-chip">
+    <div class="g-letter"
+      {% if grade == 'A+' %}style="color:#166534;"
+      {% elif grade == 'A' %}style="color:#27500A;"
+      {% elif grade == 'A-' %}style="color:#0C447C;"
+      {% elif grade == 'B' %}style="color:#1D4ED8;"
+      {% elif grade == 'C' %}style="color:#92400E;"
+      {% elif grade == 'D' %}style="color:#78350F;"
+      {% else %}style="color:#991B1B;"
+      {% endif %}>{{ grade }}</div>
+    <div>
+      <div class="g-count">{{ count }}</div>
+      <div class="g-label">student{{ count|pluralize }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
 
 <!-- Merit List -->
 <div class="card">

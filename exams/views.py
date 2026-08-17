@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Avg, Max, Min, Count
+from collections import Counter
 from django.http import HttpResponse
 import threading
 from .models import Exam, Subject, Result, MarkEntry
@@ -224,11 +225,31 @@ def mark_entry(request, exam_pk):
 def exam_result_summary(request, exam_pk):
     exam     = get_object_or_404(Exam, pk=exam_pk, created_by=request.user)
     subjects = list(exam.subjects.all())
+
+    # Recalculate serials before showing summary
+    update_exam_serials(exam)
+
     results  = (
         Result.objects.filter(exam=exam)
-        .prefetch_related('mark_entries__subject', 'student')
+        .prefetch_related('mark_entries__subject')
+        .select_related('student')
         .order_by('serial')
     )
+
+    pass_count = 0
+    fail_count = 0
+    grade_counts = Counter()
+    for r in results:
+        grade = r.letter_grade()
+        grade_counts[grade] += 1
+        if r.is_failed():
+            fail_count += 1
+        else:
+            pass_count += 1
+
+    # Ordered grade breakdown
+    GRADE_ORDER = ['A+', 'A', 'A-', 'B', 'C', 'D', 'F']
+    grade_breakdown = [(g, grade_counts.get(g, 0)) for g in GRADE_ORDER if grade_counts.get(g, 0) > 0]
 
     agg = (
         MarkEntry.objects
@@ -260,7 +281,9 @@ def exam_result_summary(request, exam_pk):
 
     return render(request, 'result_summary.html', {
         'exam': exam, 'subjects': subjects,
-        'results': results, 'subject_summary': subject_summary
+        'results': results, 'subject_summary': subject_summary,
+        'pass_count': pass_count, 'fail_count': fail_count,
+        'grade_breakdown': grade_breakdown,
     })
 
 
