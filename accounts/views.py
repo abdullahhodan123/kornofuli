@@ -278,7 +278,18 @@ def mark_payment(request, student_id):
  
     return JsonResponse({'is_paid': payment.is_paid})
  
+
+@teacher_required
+@require_POST
+def delete_student(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+    name = student.full_name
+    user = student.user
+    student.delete()
+    user.delete()
+    return JsonResponse({'deleted': True, 'name': name})
  
+
 # ─────────────────────────────────────────
 #  Attendance View  (SMS যোগ করা হয়েছে)
 # ─────────────────────────────────────────

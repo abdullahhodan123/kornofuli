@@ -228,6 +228,16 @@
     opacity: 1;
   }
 
+  .pay-btn--delete {
+    background: #fcebeb;
+    border-color: #e24b4a;
+    color: #791f1f;
+  }
+  .pay-btn--delete:hover {
+    background: #f9d5d5;
+    opacity: 1;
+  }
+
   .ksa-empty {
     text-align: center;
     padding: 3.5rem 1rem;
@@ -328,6 +338,7 @@
           <th>Guardian Phone</th>
           <th>Payment — {{ month }}/{{ year }}</th>
           <th>Report</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -368,6 +379,14 @@
                class="pay-btn pay-btn--report">
               <i class="ti ti-chart-bar" aria-hidden="true"></i> Report
             </a>
+          </td>
+          <td>
+            <button
+              class="pay-btn pay-btn--delete"
+              data-url="{% url 'delete_student' item.student.id %}"
+              data-name="{{ item.student.full_name }}">
+              <i class="ti ti-trash" aria-hidden="true"></i> Delete
+            </button>
           </td>
         </tr>
         {% endfor %}
@@ -468,7 +487,7 @@
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
   }
 
-  document.querySelectorAll('.pay-btn[data-url]').forEach(btn => {
+  document.querySelectorAll('.pay-btn--paid[data-url], .pay-btn--unpaid[data-url]').forEach(btn => {
     btn.addEventListener('click', () => {
       const isPaid      = btn.classList.contains('pay-btn--paid');
       const studentName = btn.closest('tr').querySelector('.ksa-student-name').textContent.trim();
@@ -490,13 +509,50 @@
               btn.innerHTML = '<i class="ti ti-circle-check" aria-hidden="true"></i> Paid';
               paidEl.textContent   = parseInt(paidEl.textContent)   + 1;
               unpaidEl.textContent = parseInt(unpaidEl.textContent) - 1;
-              showToast(`${studentName} marked as <strong>Paid</strong> ✓`, 'success');
+              showToast(`${studentName} marked as <strong>Paid</strong>`, 'success');
             } else {
               btn.className = 'pay-btn pay-btn--unpaid';
               btn.innerHTML = '<i class="ti ti-circle-x" aria-hidden="true"></i> Unpaid';
               paidEl.textContent   = parseInt(paidEl.textContent)   - 1;
               unpaidEl.textContent = parseInt(unpaidEl.textContent) + 1;
               showToast(`${studentName} marked as <strong>Unpaid</strong>`, 'error');
+            }
+          } catch (e) {
+            showToast('Something went wrong. Please try again.', 'error');
+          }
+          btn.classList.remove('loading');
+        }
+      );
+    });
+  });
+
+  document.querySelectorAll('.pay-btn--delete[data-url]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const studentName = btn.dataset.name;
+      showConfirm(
+        `Are you sure you want to <strong>delete</strong> <strong>${studentName}</strong>? This cannot be undone.`,
+        async () => {
+          btn.classList.add('loading');
+          try {
+            const res  = await fetch(btn.dataset.url, {
+              method: 'POST',
+              headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            });
+            const data = await res.json();
+
+            if (data.deleted) {
+              const row = btn.closest('tr');
+              const totalCount = document.querySelector('.ksa-summary-card .num');
+              totalCount.textContent = parseInt(totalCount.textContent) - 1;
+              if (row.querySelector('.pay-btn--paid')) {
+                paidEl.textContent = parseInt(paidEl.textContent) - 1;
+              } else {
+                unpaidEl.textContent = parseInt(unpaidEl.textContent) - 1;
+              }
+              row.style.transition = 'opacity 0.3s';
+              row.style.opacity = '0';
+              setTimeout(() => row.remove(), 300);
+              showToast(`${studentName} has been <strong>deleted</strong>.`, 'success');
             }
           } catch (e) {
             showToast('Something went wrong. Please try again.', 'error');
