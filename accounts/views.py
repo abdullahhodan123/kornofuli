@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from datetime import date, time, datetime
 from django.utils import timezone
+from django.db.models import Count, Q, Subquery, BooleanField
 import requests
 import threading
 from django.conf import settings
@@ -219,15 +220,19 @@ def student_list(request, class_id):
     paginator = Paginator(students, 10)
     page_obj  = paginator.get_page(request.GET.get('page'))
 
-    student_data = []
-    for student in page_obj.object_list:
-        is_paid = Payment.objects.filter(
-            student=student,
+    paid_student_ids = set(
+        Payment.objects.filter(
+            student__in=page_obj.object_list,
             month=current_month,
             year=current_year,
             is_paid=True
-        ).exists()
-        student_data.append({'student': student, 'is_paid': is_paid})
+        ).values_list('student_id', flat=True)
+    )
+
+    student_data = [
+        {'student': s, 'is_paid': s.id in paid_student_ids}
+        for s in page_obj.object_list
+    ]
 
     total_count = paginator.count
     paid_count = Payment.objects.filter(
@@ -281,7 +286,7 @@ def mark_payment(request, student_id):
 @teacher_required
 def take_attendance(request, classroom_id):
     classroom = get_object_or_404(ClassRoom, id=classroom_id)
-    students  = Student.objects.filter(classroom=classroom, is_approved=True).order_by('full_name')
+    students  = Student.objects.filter(classroom=classroom, is_approved=True).select_related('user', 'classroom').order_by('full_name')
     today     = timezone.localdate()
  
     if request.method == 'POST':
@@ -305,19 +310,32 @@ def take_attendance(request, classroom_id):
     existing     = Attendance.objects.filter(student__classroom=classroom, date=today)
     existing_map = {a.student_id: a.status for a in existing}
  
-    # Summary
+    # Summary — single aggregate query instead of N*3
+    summary_qs = (
+        Attendance.objects
+        .filter(student__classroom=classroom)
+        .exclude(date=today)
+        .values('student_id')
+        .annotate(
+            present=Count('id', filter=Q(status='present')),
+            absent=Count('id', filter=Q(status='absent')),
+            late=Count('id', filter=Q(status='late')),
+        )
+    )
+    summary_map = {s['student_id']: s for s in summary_qs}
+
     total_days = Attendance.objects.filter(
         student__classroom=classroom
     ).values('date').distinct().count()
  
     student_summary = []
     for student in students:
-        att = Attendance.objects.filter(student=student)
+        s = summary_map.get(student.id, {})
         student_summary.append({
             'student': student,
-            'present': att.filter(status='present').count(),
-            'absent':  att.filter(status='absent').count(),
-            'late':    att.filter(status='late').count(),
+            'present': s.get('present', 0),
+            'absent':  s.get('absent', 0),
+            'late':    s.get('late', 0),
             'today':   existing_map.get(student.id, None),
         })
  

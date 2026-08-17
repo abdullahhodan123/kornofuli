@@ -1,4 +1,5 @@
 from collections import defaultdict
+from django.db.models import Count, Q
 from exams.models import Result
 from accounts.models import Attendance, Payment
 
@@ -32,22 +33,32 @@ def get_full_report(student, last_n=5):
         for name, d in subject_data.items()
     ], key=lambda x: x['avg'], reverse=True)
 
-    pcts = [r.percentage() for r in results]
-    overall = {
-        'avg_pct':  round(sum(pcts) / len(pcts), 1) if pcts else 0,
-        'avg_gpa':  round(sum(r.gpa() for r in results) / len(results), 2) if results else 0,
-        'best':     round(max(pcts), 1) if pcts else 0,
-        'worst':    round(min(pcts), 1) if pcts else 0,
-        'passed':   sum(1 for r in results if not r.is_failed()),
-        'failed':   sum(1 for r in results if r.is_failed()),
-    } if results else {}
+    overall = {}
+    if results:
+        pcts = [r.percentage() for r in results]
+        gpas = [r.gpa() for r in results]
+        overall = {
+            'avg_pct':  round(sum(pcts) / len(pcts), 1),
+            'avg_gpa':  round(sum(gpas) / len(gpas), 2),
+            'best':     round(max(pcts), 1),
+            'worst':    round(min(pcts), 1),
+            'passed':   sum(1 for r in results if not r.is_failed()),
+            'failed':   sum(1 for r in results if r.is_failed()),
+        }
 
-    # ── Attendance ───────────────────────────────────────────────
-    atts    = Attendance.objects.filter(student=student).order_by('-date')
-    total   = atts.count()
-    present = atts.filter(status='present').count()
-    absent  = atts.filter(status='absent').count()
-    late    = atts.filter(status='late').count()
+    # ── Attendance — single aggregate query ───────────────────────
+    att_stats = Attendance.objects.filter(student=student).aggregate(
+        total=Count('id'),
+        present=Count('id', filter=Q(status='present')),
+        absent=Count('id', filter=Q(status='absent')),
+        late=Count('id', filter=Q(status='late')),
+    )
+    total   = att_stats['total']
+    present = att_stats['present']
+    absent  = att_stats['absent']
+    late    = att_stats['late']
+
+    atts = Attendance.objects.filter(student=student).order_by('-date')
 
     monthly_map = defaultdict(lambda: {'present': 0, 'absent': 0, 'late': 0, 'total': 0})
     for a in atts:

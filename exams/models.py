@@ -3,6 +3,10 @@ from django.core.validators import MinValueValidator
 from accounts.models import User, ClassRoom, Student
 
 
+# Reusable marker for "not yet cached"
+_UNSET = object()
+
+
 class Exam(models.Model):
     EXAM_TYPE_CHOICES = [
         ('weekly', 'Weekly Test'),
@@ -28,6 +32,9 @@ class Exam(models.Model):
 
     class Meta:
         ordering = ['-date']
+        indexes = [
+            models.Index(fields=['created_by', '-date']),
+        ]
 
     def __str__(self):
         return f"{self.name} — {self.classroom.name}"
@@ -67,32 +74,33 @@ class Result(models.Model):
     def __str__(self):
         return f"{self.student.full_name} — {self.exam.name}"
 
+    # --------------------------------------------------
+    # Cached mark_entries — loaded once, reused everywhere
+    # --------------------------------------------------
+
+    @property
+    def entries(self):
+        if not hasattr(self, '_cached_entries'):
+            self._cached_entries = list(
+                self.mark_entries.select_related('subject').all()
+            )
+        return self._cached_entries
+
     # -----------------------------
     # Total Marks
     # -----------------------------
 
     def total_marks(self):
-        return sum(
-            float(entry.marks_obtained)
-            for entry in self.mark_entries.select_related('subject').all()
-        )
+        return sum(float(e.marks_obtained) for e in self.entries)
 
     def total_full_marks(self):
-        return sum(
-            entry.subject.full_marks
-            for entry in self.mark_entries.select_related('subject').all()
-        )
+        return sum(e.subject.full_marks for e in self.entries)
 
     def percentage(self):
-        full_marks = self.total_full_marks()
-
-        if not full_marks:
+        full = self.total_full_marks()
+        if not full:
             return 0.0
-
-        return round(
-            (self.total_marks() / full_marks) * 100,
-            2
-        )
+        return round((self.total_marks() / full) * 100, 2)
 
     # -----------------------------
     # GPA Calculation
@@ -115,7 +123,7 @@ class Result(models.Model):
         return 0.0
 
     def gpa(self):
-        entries = self.mark_entries.select_related('subject').all()
+        entries = self.entries
 
         if not entries:
             return 0.0
@@ -127,20 +135,14 @@ class Result(models.Model):
         for entry in entries:
             subject = entry.subject
             marks = float(entry.marks_obtained)
+            pct = (marks / float(subject.full_marks)) * 100
+            gp = self._grade_point(pct)
 
-            percentage = (
-                marks / float(subject.full_marks)
-            ) * 100
-
-            gp = self._grade_point(percentage)
-
-            # Optional / 4th Subject
             if subject.is_optional:
                 if gp > 2.0:
                     optional_bonus = gp - 2.0
                 continue
 
-            # Fail in compulsory subject
             if marks < float(subject.pass_marks):
                 return 0.0
 
@@ -151,17 +153,8 @@ class Result(models.Model):
             return 0.0
 
         base_gpa = total_gp / subject_count
-
-        # Bangladesh Board Rule:
-        # (Optional GPA - 2) / Number of compulsory subjects
-        final_gpa = base_gpa + (
-            optional_bonus / subject_count
-        )
-
-        return round(
-            min(final_gpa, 5.0),
-            2
-        )
+        final_gpa = base_gpa + (optional_bonus / subject_count)
+        return round(min(final_gpa, 5.0), 2)
 
     # -----------------------------
     # Letter Grade
@@ -193,38 +186,22 @@ class Result(models.Model):
 
     def is_failed(self):
         return any(
-            float(entry.marks_obtained) < float(entry.subject.pass_marks)
-            for entry in self.mark_entries.select_related('subject').all()
-            if not entry.subject.is_optional
+            float(e.marks_obtained) < float(e.subject.pass_marks)
+            for e in self.entries
+            if not e.subject.is_optional
         )
 
     # -----------------------------
-    # Best Subject
+    # Best / Worst Subject
     # -----------------------------
 
     def best_subject(self):
-        entries = list(
-            self.mark_entries.select_related('subject').all()
-        )
-
-        return max(
-            entries,
-            key=lambda e: e.marks_obtained
-        ) if entries else None
-
-    # -----------------------------
-    # Worst Subject
-    # -----------------------------
+        entries = self.entries
+        return max(entries, key=lambda e: e.marks_obtained) if entries else None
 
     def worst_subject(self):
-        entries = list(
-            self.mark_entries.select_related('subject').all()
-        )
-
-        return min(
-            entries,
-            key=lambda e: e.marks_obtained
-        ) if entries else None
+        entries = self.entries
+        return min(entries, key=lambda e: e.marks_obtained) if entries else None
 
 
 class MarkEntry(models.Model):
@@ -246,6 +223,9 @@ class MarkEntry(models.Model):
 
     class Meta:
         unique_together = ('result', 'subject')
+        indexes = [
+            models.Index(fields=['subject', 'result']),
+        ]
 
     def __str__(self):
         return (

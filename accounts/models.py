@@ -69,6 +69,9 @@ class Payment(models.Model):
 
     class Meta:
         unique_together = ('student', 'month', 'year')
+        indexes = [
+            models.Index(fields=['student', 'month', 'year', 'is_paid']),
+        ]
 
 
 
@@ -86,6 +89,10 @@ class Attendance(models.Model):
 
     class Meta:
         unique_together = ('student', 'date')
+        indexes = [
+            models.Index(fields=['student', 'date']),
+            models.Index(fields=['status']),
+        ]
 
     def __str__(self):
         return f"{self.student.full_name} — {self.date} — {self.status}"

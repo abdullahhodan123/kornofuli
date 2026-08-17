@@ -61,13 +61,20 @@ def pwa_sw(request):
 
 def home_view(request):
     settings    = SiteSettings.objects.first()
-    courses     = Course.objects.all()
-    teachers    = Teacher.objects.all()
+    courses     = Course.objects.only(
+        'name', 'subject', 'description', 'icon', 'icon_bg_color',
+        'icon_color', 'level', 'fee_per_month', 'order'
+    )
+    teachers    = Teacher.objects.only(
+        'name', 'designation', 'subject', 'qualification',
+        'experience_years', 'short_bio', 'photo',
+        'avatar_initials', 'avatar_bg', 'avatar_color'
+    )
     latest_year = Result.objects.values_list("year", flat=True).first()
     results     = Result.objects.filter(year=latest_year) if latest_year else []
-    notices     = Notice.objects.all()
-    gallery     = GalleryImage.objects.all()[:8]
-    faqs        = FAQ.objects.all()
+    notices     = Notice.objects.only('title', 'body', 'notice_type', 'is_pinned', 'published_at')
+    gallery     = GalleryImage.objects.only('title', 'image', 'caption', 'order')[:8]
+    faqs        = FAQ.objects.only('question', 'answer', 'order')
     schedules   = BatchSchedule.objects.select_related("course", "teacher").all()
 
     is_teacher  = request.user.is_authenticated and request.user.role == 'teacher'

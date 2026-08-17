@@ -8,4 +8,4 @@ def update_exam_serials(exam):
     results.sort(key=lambda r: r.total_marks(), reverse=True)
     for rank, result in enumerate(results, start=1):
         result.serial = rank
-        result.save(update_fields=['serial'])
+    Result.objects.bulk_update(results, ['serial'], batch_size=100)

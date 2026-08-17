@@ -176,6 +176,15 @@ AUTH_USER_MODEL = 'accounts.User'
 BULKSMS_API_KEY = config("BULKSMS_API_KEY")
 BULKSMS_SENDER_ID = config("BULKSMS_SENDER_ID")
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Cache — LocMemCache for single-server setup
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'kornofuli-cache',
+        'TIMEOUT': 300,  # 5 minutes default
+    }
+}
 
 DEBUG = config("DEBUG", default=False, cast=bool)

@@ -3,13 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import transaction
+from django.db.models import Avg, Max, Min, Count
 from django.http import HttpResponse
 import threading
 from .models import Exam, Subject, Result, MarkEntry
 from .utils import update_exam_serials
 from .pdf_utils import build_exam_result_pdf
 from accounts.models import Student, ClassRoom
-from accounts.views import send_sms, teacher_required  # ✅ shared decorator + SMS
+from accounts.views import send_sms, teacher_required
 
 
 # ─────────────────────────────────────────
@@ -95,7 +96,7 @@ f"কর্ণফুলী বিজ্ঞান একাডেমি"
 
 @teacher_required
 def exam_list(request):
-    exams   = Exam.objects.filter(created_by=request.user).prefetch_related('subjects', 'results')
+    exams   = Exam.objects.filter(created_by=request.user).select_related('classroom').prefetch_related('subjects', 'results')
     paginator = Paginator(exams, 6)
     page_obj  = paginator.get_page(request.GET.get('page'))
     return render(request, 'exam_list.html', {'exams': page_obj.object_list, 'page_obj': page_obj})
@@ -140,7 +141,7 @@ def exam_create(request):
 def exam_detail(request, pk):
     exam     = get_object_or_404(Exam, pk=pk, created_by=request.user)
     subjects = exam.subjects.all()
-    results  = exam.results.prefetch_related('mark_entries__subject', 'student').order_by('serial')
+    results  = exam.results.prefetch_related('mark_entries__subject').select_related('student', 'student__classroom').order_by('serial')
     return render(request, 'exam_detail.html', {
         'exam': exam, 'subjects': subjects, 'results': results
     })
@@ -188,7 +189,7 @@ def subject_delete(request, pk):
 def mark_entry(request, exam_pk):
     exam     = get_object_or_404(Exam, pk=exam_pk, created_by=request.user)
     subjects = list(exam.subjects.all())
-    students = Student.objects.filter(classroom=exam.classroom, is_approved=True)
+    students = Student.objects.filter(classroom=exam.classroom, is_approved=True).select_related('user', 'classroom')
 
     if request.method == 'POST':
         with transaction.atomic():
@@ -229,13 +230,30 @@ def exam_result_summary(request, exam_pk):
         .order_by('serial')
     )
 
+    agg = (
+        MarkEntry.objects
+        .filter(subject__exam=exam)
+        .values('subject_id')
+        .annotate(
+            avg_marks=Avg('marks_obtained'),
+            best_marks=Max('marks_obtained'),
+            worst_marks=Min('marks_obtained'),
+            entry_count=Count('id'),
+        )
+    )
+    agg_map = {a['subject_id']: a for a in agg}
+
     subject_summary = []
     for subject in subjects:
-        entries = MarkEntry.objects.filter(subject=subject).select_related('result__student')
-        if entries.exists():
-            best  = entries.order_by('-marks_obtained').first()
-            worst = entries.order_by('marks_obtained').first()
-            avg   = round(sum(float(e.marks_obtained) for e in entries) / entries.count(), 2)
+        a = agg_map.get(subject.id)
+        if a and a['entry_count'] > 0:
+            best = MarkEntry.objects.filter(
+                subject=subject, marks_obtained=a['best_marks']
+            ).select_related('result__student').first()
+            worst = MarkEntry.objects.filter(
+                subject=subject, marks_obtained=a['worst_marks']
+            ).select_related('result__student').first()
+            avg = round(float(a['avg_marks']), 2)
         else:
             best = worst = avg = None
         subject_summary.append({'subject': subject, 'best': best, 'worst': worst, 'avg': avg})
