@@ -661,35 +661,7 @@
       });
     });
 
-    // Show loader on button click
-    document.addEventListener('click', e => {
-      const btn = e.target.closest('button, a.btn, [role="button"]');
-      if (!btn) return;
-      if (btn.id === 'sidebarToggle' || btn.classList.contains('ksa-hamburger') || btn.dataset.noLoader) return;
 
-      // Skip PDF downloads
-      const href = btn.getAttribute('href') || '';
-      if (btn.tagName === 'A' && (href.includes('pdf') || href.endsWith('.pdf'))) return;
-
-      const loader = document.getElementById('ksaLoader');
-      if (loader) {
-        loader.classList.remove('hide');
-        loader.style.opacity = '1';
-      }
-    });
-
-    // Also show on form submit
-    document.addEventListener('submit', e => {
-      const form = e.target;
-      if (form.tagName !== 'FORM') return;
-      if (form.dataset.ajax === 'true') return;
-
-      const loader = document.getElementById('ksaLoader');
-      if (loader) {
-        loader.classList.remove('hide');
-        loader.style.opacity = '1';
-      }
-    });
   </script>
 
   {% block extra_js %}{% endblock %}

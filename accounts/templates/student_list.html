@@ -384,7 +384,8 @@
             <button
               class="pay-btn pay-btn--delete"
               data-url="{% url 'delete_student' item.student.id %}"
-              data-name="{{ item.student.full_name }}">
+              data-name="{{ item.student.full_name }}"
+              data-no-loader>
               <i class="ti ti-trash" aria-hidden="true"></i> Delete
             </button>
           </td>
@@ -465,7 +466,7 @@
             background: #fff; color: var(--gray-text);
             font-size: 13.5px; cursor: pointer;
           ">Cancel</button>
-          <button id="confirm-ok" style="
+          <button id="confirm-ok" data-no-loader style="
             padding: 8px 18px; border-radius: 7px;
             border: none; background: var(--blue-main);
             color: #fff; font-size: 13.5px;

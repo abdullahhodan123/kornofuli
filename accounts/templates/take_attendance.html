@@ -259,16 +259,16 @@
   </div>
 
   <!-- Attendance form -->
-  <form method="post">
+  <form method="post" data-no-loader>
     {% csrf_token %}
 
     <!-- Quick actions + live counter -->
     <div class="att-quick">
       <div class="att-quick-left">
-        <button type="button" class="quick-btn present" onclick="markAll('present')">
+        <button type="button" class="quick-btn present" onclick="markAll('present')" data-no-loader>
           <i class="ti ti-checks"></i> All Present
         </button>
-        <button type="button" class="quick-btn absent" onclick="markAll('absent')">
+        <button type="button" class="quick-btn absent" onclick="markAll('absent')" data-no-loader>
           <i class="ti ti-x"></i> All Absent
         </button>
       </div>

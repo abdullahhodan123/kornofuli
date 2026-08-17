@@ -229,6 +229,12 @@
       e.preventDefault();
       overInputs[0].focus();
       alert(`কিছু নম্বর সর্বোচ্চ সীমার বেশি! লাল ঘরগুলো ঠিক করুন।`);
+    } else {
+      const loader = document.getElementById('ksaLoader');
+      if (loader) {
+        loader.classList.remove('hide');
+        loader.style.opacity = '1';
+      }
     }
   });
 </script>
