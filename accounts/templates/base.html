@@ -380,6 +380,52 @@
     }
 
     /* ══════════════════════════════════════
+       PAGE LOADER
+    ══════════════════════════════════════ */
+    .ksa-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(9, 25, 44, 0.4);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.3s ease;
+    }
+    .ksa-loader.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .ksa-loader-box {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 32px 40px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .ksa-loader-spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--gray-border);
+      border-top-color: var(--blue-main);
+      border-radius: 50%;
+      animation: ksa-spin 0.7s linear infinite;
+    }
+    .ksa-loader-text {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--gray-text);
+      font-family: var(--font-display);
+    }
+
+    @keyframes ksa-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ══════════════════════════════════════
        MOBILE
     ══════════════════════════════════════ */
     @media (max-width: 768px) {
@@ -398,6 +444,14 @@
   {% block extra_css %}{% endblock %}
 </head>
 <body>
+
+  <!-- Page Loader (hidden by default, shown on form submit) -->
+  <div class="ksa-loader hide" id="ksaLoader">
+    <div class="ksa-loader-box">
+      <div class="ksa-loader-spinner"></div>
+      <div class="ksa-loader-text">Processing...</div>
+    </div>
+  </div>
 
   {% if messages %}
   <div class="messages-wrap" role="alert" aria-live="polite">
@@ -605,6 +659,36 @@
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       });
+    });
+
+    // Show loader on button click
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('button, a.btn, [role="button"]');
+      if (!btn) return;
+      if (btn.id === 'sidebarToggle' || btn.classList.contains('ksa-hamburger') || btn.dataset.noLoader) return;
+
+      // Skip PDF downloads
+      const href = btn.getAttribute('href') || '';
+      if (btn.tagName === 'A' && (href.includes('pdf') || href.endsWith('.pdf'))) return;
+
+      const loader = document.getElementById('ksaLoader');
+      if (loader) {
+        loader.classList.remove('hide');
+        loader.style.opacity = '1';
+      }
+    });
+
+    // Also show on form submit
+    document.addEventListener('submit', e => {
+      const form = e.target;
+      if (form.tagName !== 'FORM') return;
+      if (form.dataset.ajax === 'true') return;
+
+      const loader = document.getElementById('ksaLoader');
+      if (loader) {
+        loader.classList.remove('hide');
+        loader.style.opacity = '1';
+      }
     });
   </script>
 
