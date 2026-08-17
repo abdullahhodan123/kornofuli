@@ -325,7 +325,6 @@ def take_attendance(request, classroom_id):
     summary_qs = (
         Attendance.objects
         .filter(student__classroom=classroom)
-        .exclude(date=today)
         .values('student_id')
         .annotate(
             present=Count('id', filter=Q(status='present')),
