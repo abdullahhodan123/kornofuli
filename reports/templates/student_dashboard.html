@@ -218,7 +218,7 @@
     <input type="number" name="last" value="{{ last_n }}" min="1" max="50">
     <label>exams</label>
     <button type="submit"><i class="ti ti-refresh"></i> Update</button>
-    <a href="{% url 'reports:student_report_pdf' student.id %}?last={{ last_n }}" class="rp-btn rp-btn-outline" target="_blank">
+    <a href="{% url 'reports:student_report_pdf' student.id %}?last={{ last_n }}" class="rp-btn rp-btn-outline">
       <i class="ti ti-download"></i> Download PDF
     </a>
     {% if actual_count == 0 %}
