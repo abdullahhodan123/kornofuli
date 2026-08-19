@@ -232,8 +232,6 @@
       <span class="att-chip blue"><i class="ti ti-calendar"></i> {{ today|date:"d M Y" }}</span>
       {% if already_taken %}
       <span class="att-chip amber"><i class="ti ti-pencil"></i> Edit mode</span>
-      {% else %}
-      <span class="att-chip green"><i class="ti ti-circle-plus"></i> New</span>
       {% endif %}
     </div>
   </div>
@@ -360,9 +358,6 @@
           <i class="ti ti-device-floppy"></i>
           {% if already_taken %}Update Attendance{% else %}Save Attendance{% endif %}
         </button>
-        <a href="{ }" class="btn-report">
-          <i class="ti ti-chart-bar"></i> View Report
-        </a>
       </div>
       {% endif %}
     </div>
