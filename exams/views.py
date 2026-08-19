@@ -6,6 +6,7 @@ from django.db import transaction
 from django.db.models import Avg, Max, Min, Count
 from collections import Counter
 from django.http import HttpResponse
+from django.views.decorators.cache import never_cache
 import threading
 from .models import Exam, Subject, Result, MarkEntry
 from .utils import update_exam_serials
@@ -288,6 +289,7 @@ def exam_result_summary(request, exam_pk):
 
 
 @teacher_required
+@never_cache
 def exam_result_pdf(request, exam_pk):
     exam     = get_object_or_404(Exam, pk=exam_pk, created_by=request.user)
     subjects = list(exam.subjects.all())
@@ -302,4 +304,7 @@ def exam_result_pdf(request, exam_pk):
     filename = f"{exam.name}_result_sheet.pdf".replace(' ', '_')
     response = HttpResponse(buf.getvalue(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
     return response
