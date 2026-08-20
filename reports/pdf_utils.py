@@ -47,15 +47,13 @@ def _rule(width, color=GRID_COLOR, height=0.7):
 
 def build_student_report_pdf(student, report_data, academy_name=None, tagline=None):
     """Build a full individual student report PDF and return a BytesIO buffer."""
-    from home.models import SiteSettings
-
-    site = None
     if not academy_name or not tagline:
+        from home.models import SiteSettings
         site = SiteSettings.objects.first()
-    if not academy_name:
-        academy_name = site.academy_name if site else 'KSA'
-    if not tagline:
-        tagline = site.tagline if site else ''
+        if not academy_name:
+            academy_name = site.academy_name if site else 'KSA'
+        if not tagline:
+            tagline = site.tagline if site else ''
 
     results          = report_data.get('results', [])
     subject_analysis = report_data.get('subject_analysis', [])
@@ -310,7 +308,7 @@ def build_student_report_pdf(student, report_data, academy_name=None, tagline=No
             ))
 
             entries = {e.subject_id: e for e in result.mark_entries.all()}
-            subjects_in_exam = [e.subject for e in result.mark_entries.all()]
+            subjects_in_exam = [e.subject for e in entries.values()]
 
             ex_header = ['Subject', 'Obtained', 'Full', 'Pass', '%', 'Status']
             ex_data = [ex_header]

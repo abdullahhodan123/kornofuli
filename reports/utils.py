@@ -1,5 +1,4 @@
 from collections import defaultdict
-from django.db.models import Count, Q
 from exams.models import Result
 from accounts.models import Attendance, Payment
 
@@ -46,19 +45,16 @@ def get_full_report(student, last_n=5):
             'failed':   sum(1 for r in results if r.is_failed()),
         }
 
-    # ── Attendance — single aggregate query ───────────────────────
-    att_stats = Attendance.objects.filter(student=student).aggregate(
-        total=Count('id'),
-        present=Count('id', filter=Q(status='present')),
-        absent=Count('id', filter=Q(status='absent')),
-        late=Count('id', filter=Q(status='late')),
+    # ── Attendance — single query ───────────────────────────────
+    atts = list(
+        Attendance.objects.filter(student=student)
+        .order_by('-date')
     )
-    total   = att_stats['total']
-    present = att_stats['present']
-    absent  = att_stats['absent']
-    late    = att_stats['late']
 
-    atts = Attendance.objects.filter(student=student).order_by('-date')
+    total   = len(atts)
+    present = sum(1 for a in atts if a.status == 'present')
+    absent  = sum(1 for a in atts if a.status == 'absent')
+    late    = sum(1 for a in atts if a.status == 'late')
 
     monthly_map = defaultdict(lambda: {'present': 0, 'absent': 0, 'late': 0, 'total': 0})
     for a in atts:

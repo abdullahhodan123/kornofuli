@@ -75,13 +75,22 @@ def bulk_student_report_pdf(request, classroom_id):
     if not students.exists():
         return HttpResponse('No students found.', content_type='text/plain', status=404)
 
+    from home.models import SiteSettings
+    site = SiteSettings.objects.first()
+    academy_name = site.academy_name if site else 'KSA'
+    tagline = site.tagline if site else ''
+
     last_n = _parse_last_n(request)
     zip_buf = BytesIO()
 
     with zipfile.ZipFile(zip_buf, 'w', zipfile.ZIP_DEFLATED) as zf:
         for student in students:
             report = get_full_report(student, last_n)
-            pdf_buf = build_student_report_pdf(student, report)
+            pdf_buf = build_student_report_pdf(
+                student, report,
+                academy_name=academy_name,
+                tagline=tagline,
+            )
             filename = f"{student.full_name}_report.pdf".replace(' ', '_')
             zf.writestr(filename, pdf_buf.getvalue())
 
