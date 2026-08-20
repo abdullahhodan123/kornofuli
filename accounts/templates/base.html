@@ -492,17 +492,17 @@
         </div>
       </a>
 
-      <div class="ksa-nav-section">
+        <div class="ksa-nav-section">
         <div class="ksa-nav-section-label">Explore</div>
-        <a href="#hero"     class="ksa-nav-item"><i class="ti ti-home-2"></i> Home</a>
-        <a href="#courses"  class="ksa-nav-item"><i class="ti ti-book-2"></i> Courses</a>
-        <a href="#results"  class="ksa-nav-item"><i class="ti ti-trophy"></i> Results</a>
-        <a href="#teachers" class="ksa-nav-item"><i class="ti ti-school"></i> Teachers</a>
-        <a href="#schedule" class="ksa-nav-item"><i class="ti ti-calendar-event"></i> Schedule</a>
-        <a href="#notices"  class="ksa-nav-item"><i class="ti ti-bell"></i> Notices</a>
-        <a href="#gallery"  class="ksa-nav-item"><i class="ti ti-photo"></i> Gallery</a>
-        <a href="#faq"      class="ksa-nav-item"><i class="ti ti-help-circle"></i> FAQ</a>
-        <a href="#location" class="ksa-nav-item"><i class="ti ti-map-pin"></i> Contact</a>
+        <a href="{% url 'home' %}#hero"     class="ksa-nav-item"><i class="ti ti-home-2"></i> Home</a>
+        <a href="{% url 'home' %}#courses"  class="ksa-nav-item"><i class="ti ti-book-2"></i> Courses</a>
+        <a href="{% url 'home' %}#results"  class="ksa-nav-item"><i class="ti ti-trophy"></i> Results</a>
+        <a href="{% url 'home' %}#teachers" class="ksa-nav-item"><i class="ti ti-school"></i> Teachers</a>
+        <a href="{% url 'home' %}#schedule" class="ksa-nav-item"><i class="ti ti-calendar-event"></i> Schedule</a>
+        <a href="{% url 'home' %}#notices"  class="ksa-nav-item"><i class="ti ti-bell"></i> Notices</a>
+        <a href="{% url 'home' %}#gallery"  class="ksa-nav-item"><i class="ti ti-photo"></i> Gallery</a>
+        <a href="{% url 'home' %}#faq"      class="ksa-nav-item"><i class="ti ti-help-circle"></i> FAQ</a>
+        <a href="{% url 'home' %}#location" class="ksa-nav-item"><i class="ti ti-map-pin"></i> Contact</a>
       </div>
 
       {% if user.is_authenticated %}
