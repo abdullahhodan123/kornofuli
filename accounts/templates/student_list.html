@@ -285,6 +285,9 @@
           <i class="ti ti-users"></i>
           {{ total_count }} Students
         </span>
+        <a href="{% url 'reports:bulk_student_report_pdf' classroom.id %}" class="pay-btn pay-btn--report" style="text-decoration: none;">
+          <i class="ti ti-download"></i> Download All PDFs
+        </a>
         <a href="{% url 'add_student' %}" class="ksa-back-btn" style="margin-bottom: 0;">
           <i class="ti ti-user-plus"></i> Add Student
         </a>
