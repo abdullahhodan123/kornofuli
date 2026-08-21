@@ -107,6 +107,26 @@
     color: var(--gray-text);
   }
 
+  .ksa-search-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ksa-search-input {
+    padding: 7px 12px;
+    border: 1px solid var(--gray-border);
+    border-radius: 8px;
+    font-size: 13px;
+    min-width: 220px;
+    background: #fff;
+  }
+
+  .ksa-search-input:focus {
+    outline: none;
+    border-color: var(--primary, #4f46e5);
+  }
+
   .ksa-badge {
     display: inline-flex;
     align-items: center;
@@ -329,6 +349,24 @@
   <div class="ksa-table-wrap">
     <div class="ksa-table-toolbar">
       <span>All Students</span>
+      <form method="get" action="" class="ksa-search-form" role="search">
+        <input
+          type="search"
+          name="q"
+          value="{{ query }}"
+          class="ksa-search-input"
+          placeholder="Search name, school, phone..."
+          aria-label="Search students"
+        />
+        <button type="submit" class="pay-btn pay-btn--report" style="text-decoration: none;">
+          <i class="ti ti-search" aria-hidden="true"></i> Search
+        </button>
+        {% if query %}
+        <a href="{% url 'student_list' classroom.id %}" class="ksa-back-btn" style="margin-bottom: 0;">
+          Clear
+        </a>
+        {% endif %}
+      </form>
     </div>
 
     {% if student_data %}
@@ -399,7 +437,11 @@
     {% else %}
     <div class="ksa-empty">
       <i class="ti ti-users-group"></i>
-      No students found in this classroom.
+      {% if query %}
+        No students matching "{{ query }}".
+      {% else %}
+        No students found in this classroom.
+      {% endif %}
     </div>
     {% endif %}
   </div>

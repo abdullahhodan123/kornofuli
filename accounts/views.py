@@ -217,6 +217,16 @@ def student_list(request, class_id):
         is_approved=True
     ).select_related('user', 'classroom').order_by('full_name')
 
+    query = request.GET.get('q', '').strip()
+    if query:
+        students = students.filter(
+            Q(full_name__icontains=query) |
+            Q(school_name__icontains=query) |
+            Q(guardian_phone_1__icontains=query) |
+            Q(guardian_phone_2__icontains=query) |
+            Q(user__username__icontains=query)
+        )
+
     paginator = Paginator(students, 10)
     page_obj  = paginator.get_page(request.GET.get('page'))
 
@@ -251,6 +261,7 @@ def student_list(request, class_id):
         'unpaid_count': total_count - paid_count,
         'total_count':  total_count,
         'page_obj':     page_obj,
+        'query':        query,
     }
     return render(request, 'student_list.html', context)
  
