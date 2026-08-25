@@ -1,4 +1,4 @@
-/* KSA - Progressive Web App service worker */
+/* KBA - Progressive Web App service worker */
 const CACHE_NAME = 'ksa-pwa-v1';
 const PRECACHE_URLS = [
   '/accounts/login/',

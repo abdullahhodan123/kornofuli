@@ -77,7 +77,7 @@ def bulk_student_report_pdf(request, classroom_id):
 
     from home.models import SiteSettings
     site = SiteSettings.objects.first()
-    academy_name = site.academy_name if site else 'KSA'
+    academy_name = site.academy_name if site else 'KBA'
     tagline = site.tagline if site else ''
 
     last_n = _parse_last_n(request)

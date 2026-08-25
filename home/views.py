@@ -22,8 +22,8 @@ from accounts.views import teacher_required
 @never_cache
 def pwa_manifest(request):
     settings    = SiteSettings.objects.first()
-    name        = settings.academy_name if settings else 'KSA'
-    short_name  = name if len(name) <= 12 else 'KSA'
+    name        = settings.academy_name if settings else 'KBA'
+    short_name  = name if len(name) <= 12 else 'KBA'
     theme_color = '#0C447C'
 
     manifest = {

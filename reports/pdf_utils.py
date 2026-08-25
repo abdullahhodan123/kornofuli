@@ -51,7 +51,7 @@ def build_student_report_pdf(student, report_data, academy_name=None, tagline=No
         from home.models import SiteSettings
         site = SiteSettings.objects.first()
         if not academy_name:
-            academy_name = site.academy_name if site else 'KSA'
+            academy_name = site.academy_name if site else 'KBA'
         if not tagline:
             tagline = site.tagline if site else ''
 

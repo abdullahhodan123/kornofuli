@@ -53,7 +53,7 @@ def build_exam_result_pdf(exam, results, subjects, academy_name=None, tagline=No
     if not academy_name or not tagline:
         site = SiteSettings.objects.first()
     if not academy_name:
-        academy_name = site.academy_name if site else 'KSA'
+        academy_name = site.academy_name if site else 'KBA'
     if not tagline:
         tagline = site.tagline if site else ''
 
