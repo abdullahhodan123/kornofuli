@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Edit Class — {{ classroom.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .ksa-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+  }
+
+  .ksa-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+  }
+
+  .ksa-page-header-left h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--blue-dark);
+    margin-bottom: 4px;
+  }
+
+  .ksa-page-header-left p {
+    font-size: 13.5px;
+    color: var(--gray-muted);
+  }
+
+  .ksa-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--blue-main);
+    text-decoration: none;
+    margin-bottom: 1.2rem;
+    transition: color 0.15s;
+  }
+  .ksa-back-btn:hover { color: var(--blue-dark); }
+
+  .form-card {
+    background: var(--white);
+    border: 1px solid var(--gray-border);
+    border-radius: var(--radius);
+    padding: 2rem;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+  .field label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--gray-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .field input {
+    border: 0.5px solid var(--gray-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 13px;
+    font-size: 14px;
+    color: var(--gray-text);
+    font-family: inherit;
+    background: #FAFAF8;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+  }
+  .field input:focus {
+    border-color: var(--blue-mid);
+    box-shadow: 0 0 0 3px rgba(55,138,221,0.12);
+    background: var(--white);
+  }
+  .field .errors {
+    font-size: 12px;
+    color: var(--red-text);
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--blue-main);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.15s, transform 0.1s;
+    margin-top: 0.5rem;
+  }
+  .submit-btn i { font-size: 18px; }
+  .submit-btn:hover { background: var(--blue-dark); }
+  .submit-btn:active { transform: scale(0.99); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ksa-page">
+
+  <a href="{% url 'class_list' %}" class="ksa-back-btn">
+    <i class="ti ti-arrow-left"></i>
+    Back to Classes
+  </a>
+
+  <div class="ksa-page-header">
+    <div class="ksa-page-header-left">
+      <h1>Edit Class</h1>
+      <p>Rename "{{ classroom.name }}"</p>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="field">
+        <label for="{{ form.name.id_for_label }}">Class Name</label>
+        {{ form.name }}
+        {% if form.name.errors %}<span class="errors">{{ form.name.errors|join:", " }}</span>{% endif %}
+      </div>
+
+      <button class="submit-btn" type="submit">
+        <i class="ti ti-check"></i> Save Changes
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

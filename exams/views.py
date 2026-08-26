@@ -35,6 +35,13 @@ def send_result_sms(exam, students):
                 # Subject wise marks + grade
                 subject_lines = []
                 for entry in entries:
+                    optional_tag = ' (ঐচ্ছিক)' if entry.subject.is_optional else ''
+                    if entry.is_absent or entry.marks_obtained is None:
+                        subject_lines.append(
+                            f"{entry.subject.name}{optional_tag}: অনুপস্থিত"
+                        )
+                        continue
+
                     marks = float(entry.marks_obtained)
                     full  = float(entry.subject.full_marks)
                     pct   = (marks / full) * 100
@@ -47,7 +54,6 @@ def send_result_sms(exam, students):
                     elif pct >= 33: grade = 'D'
                     else:           grade = 'F'
 
-                    optional_tag = ' (ঐচ্ছিক)' if entry.subject.is_optional else ''
                     subject_lines.append(
                         f"{entry.subject.name}{optional_tag}: {int(marks)}/{int(full)} [{grade}]"
                     )
@@ -213,11 +219,18 @@ def mark_entry(request, exam_pk):
                 result, _ = Result.objects.get_or_create(student=student, exam=exam)
                 for subject in subjects:
                     key   = f"marks_{student.pk}_{subject.pk}"
+                    absent_key = f"absent_{student.pk}_{subject.pk}"
                     value = request.POST.get(key, '').strip()
-                    if value:
+                    is_absent = request.POST.get(absent_key) == 'on'
+                    if is_absent:
                         MarkEntry.objects.update_or_create(
                             result=result, subject=subject,
-                            defaults={'marks_obtained': float(value)}
+                            defaults={'marks_obtained': None, 'is_absent': True}
+                        )
+                    elif value:
+                        MarkEntry.objects.update_or_create(
+                            result=result, subject=subject,
+                            defaults={'marks_obtained': float(value), 'is_absent': False}
                         )
             update_exam_serials(exam)
 
@@ -268,7 +281,7 @@ def exam_result_summary(request, exam_pk):
 
     agg = (
         MarkEntry.objects
-        .filter(subject__exam=exam)
+        .filter(subject__exam=exam, is_absent=False)
         .values('subject_id')
         .annotate(
             avg_marks=Avg('marks_obtained'),

@@ -111,6 +111,7 @@ def build_exam_result_pdf(exam, results, subjects, academy_name=None, tagline=No
 
     pass_count = 0
     failed_cells = []
+    absent_cells = []
     failed_status_rows = []
 
     for result in results:
@@ -128,6 +129,9 @@ def build_exam_result_pdf(exam, results, subjects, academy_name=None, tagline=No
             e = entries.get(s.pk)
             if e is None:
                 row.append('-')
+            elif e.is_absent or e.marks_obtained is None:
+                row.append('Absent')
+                absent_cells.append((len(data), 2 + i))
             else:
                 row.append(_fmt(e.marks_obtained))
                 if float(e.marks_obtained) < float(s.pass_marks):
@@ -231,6 +235,10 @@ def build_exam_result_pdf(exam, results, subjects, academy_name=None, tagline=No
     for (r, c) in failed_cells:
         style.append(('TEXTCOLOR', (c, r), (c, r), RED))
         style.append(('FONTNAME', (c, r), (c, r), 'Helvetica-Bold'))
+
+    for (r, c) in absent_cells:
+        style.append(('TEXTCOLOR', (c, r), (c, r), MUTED))
+        style.append(('FONTNAME', (c, r), (c, r), 'Helvetica-Oblique'))
 
     for r in failed_status_rows:
         style.append(('TEXTCOLOR', (status_col, r), (status_col, r), RED))

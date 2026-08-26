@@ -91,7 +91,10 @@ class Result(models.Model):
     # -----------------------------
 
     def total_marks(self):
-        return sum(float(e.marks_obtained) for e in self.entries)
+        return sum(
+            float(e.marks_obtained) for e in self.entries
+            if not e.is_absent and e.marks_obtained is not None
+        )
 
     def total_full_marks(self):
         return sum(e.subject.full_marks for e in self.entries)
@@ -134,6 +137,12 @@ class Result(models.Model):
 
         for entry in entries:
             subject = entry.subject
+
+            if entry.is_absent or entry.marks_obtained is None:
+                if not subject.is_optional:
+                    return 0.0
+                continue
+
             marks = float(entry.marks_obtained)
             pct = (marks / float(subject.full_marks)) * 100
             gp = self._grade_point(pct)
@@ -185,22 +194,31 @@ class Result(models.Model):
     # -----------------------------
 
     def is_failed(self):
-        return any(
-            float(e.marks_obtained) < float(e.subject.pass_marks)
-            for e in self.entries
-            if not e.subject.is_optional
-        )
+        for e in self.entries:
+            if e.subject.is_optional:
+                continue
+            if e.is_absent or e.marks_obtained is None:
+                return True
+            if float(e.marks_obtained) < float(e.subject.pass_marks):
+                return True
+        return False
 
     # -----------------------------
     # Best / Worst Subject
     # -----------------------------
 
     def best_subject(self):
-        entries = self.entries
+        entries = [
+            e for e in self.entries
+            if not e.is_absent and e.marks_obtained is not None
+        ]
         return max(entries, key=lambda e: e.marks_obtained) if entries else None
 
     def worst_subject(self):
-        entries = self.entries
+        entries = [
+            e for e in self.entries
+            if not e.is_absent and e.marks_obtained is not None
+        ]
         return min(entries, key=lambda e: e.marks_obtained) if entries else None
 
 
@@ -218,8 +236,11 @@ class MarkEntry(models.Model):
     marks_obtained = models.DecimalField(
         max_digits=6,
         decimal_places=2,
-        validators=[MinValueValidator(0)]
+        validators=[MinValueValidator(0)],
+        null=True,
+        blank=True
     )
+    is_absent = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('result', 'subject')
@@ -228,18 +249,27 @@ class MarkEntry(models.Model):
         ]
 
     def __str__(self):
+        if self.is_absent:
+            return (
+                f"{self.result.student.full_name} — "
+                f"{self.subject.name}: Absent"
+            )
         return (
             f"{self.result.student.full_name} — "
             f"{self.subject.name}: {self.marks_obtained}"
         )
 
     def is_passed(self):
+        if self.is_absent:
+            return False
         return (
             float(self.marks_obtained)
             >= float(self.subject.pass_marks)
         )
 
     def percentage(self):
+        if self.is_absent:
+            return 0.0
         return round(
             (
                 float(self.marks_obtained)

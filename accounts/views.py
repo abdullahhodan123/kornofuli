@@ -206,6 +206,22 @@ def add_class(request):
 
 
 @teacher_required
+def edit_class(request, pk):
+    """Teacher class name edit করতে পারে।"""
+    classroom = get_object_or_404(ClassRoom, pk=pk)
+    if request.method == 'POST':
+        form = ClassRoomForm(request.POST, instance=classroom)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"{classroom.name} updated successfully.")
+            return redirect('class_list')
+    else:
+        form = ClassRoomForm(instance=classroom)
+
+    return render(request, 'class_edit.html', {'form': form, 'classroom': classroom})
+
+
+@teacher_required
 def student_list(request, class_id):
     now = datetime.now()
     current_month = now.month

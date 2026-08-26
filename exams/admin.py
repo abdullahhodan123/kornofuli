@@ -11,7 +11,7 @@ class SubjectInline(admin.TabularInline):
 class MarkEntryInline(admin.TabularInline):
     model  = MarkEntry
     extra  = 0
-    fields = ('subject', 'marks_obtained')
+    fields = ('subject', 'marks_obtained', 'is_absent')
 
 
 @admin.register(Exam)
@@ -58,8 +58,8 @@ class ResultAdmin(admin.ModelAdmin):
 
 @admin.register(MarkEntry)
 class MarkEntryAdmin(admin.ModelAdmin):
-    list_display  = ('result', 'subject', 'marks_obtained', 'get_passed')
-    list_filter   = ('subject__exam__classroom', 'subject__exam')
+    list_display  = ('result', 'subject', 'marks_obtained', 'is_absent', 'get_passed')
+    list_filter   = ('subject__exam__classroom', 'subject__exam', 'is_absent')
     search_fields = ('result__student__full_name', 'subject__name')
 
     @admin.display(description='Pass?', boolean=True)

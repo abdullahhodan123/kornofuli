@@ -87,6 +87,23 @@
     text-transform: uppercase; letter-spacing: 0.04em;
   }
 
+  .absent-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: 4px; margin-top: 4px;
+  }
+  .absent-row input[type="checkbox"] {
+    accent-color: #e53e3e; cursor: pointer;
+  }
+  .absent-row label {
+    font-size: 10.5px; color: #e53e3e; font-weight: 600;
+    cursor: pointer; user-select: none;
+  }
+  .mark-input.absent-mode {
+    background: #fff5f5; border-color: #e53e3e;
+    color: #e53e3e; text-decoration: line-through;
+    pointer-events: none; opacity: 0.6;
+  }
+
   .form-actions {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
     padding: 20px; background: var(--white);
@@ -153,12 +170,23 @@
               class="mark-input"
               name="marks_{{ student.pk }}_{{ subject.pk }}"
               data-max="{{ subject.full_marks }}"
+              data-student="{{ student.pk }}"
+              data-subject="{{ subject.pk }}"
               min="0"
               max="{{ subject.full_marks }}"
               step="0.5"
               placeholder="—"
             >
             <div class="full-marks-label">/ {{ subject.full_marks }}</div>
+            <div class="absent-row">
+              <input type="checkbox"
+                     class="absent-check"
+                     id="absent_{{ student.pk }}_{{ subject.pk }}"
+                     name="absent_{{ student.pk }}_{{ subject.pk }}"
+                     data-student="{{ student.pk }}"
+                     data-subject="{{ subject.pk }}">
+              <label for="absent_{{ student.pk }}_{{ subject.pk }}">Absent</label>
+            </div>
           </td>
           {% endfor %}
         </tr>
@@ -186,34 +214,75 @@
 </form>
 
 <script>
-  // ── ১. Existing নম্বর fill করো ──────────────────────────────
+  // ── ১. Existing নম্বর ও absent fill করো ──────────────────────────
   const existing = {
     {% for result in existing_results %}
       {% for entry in result.mark_entries.all %}
-        "marks_{{ result.student_id }}_{{ entry.subject_id }}": "{{ entry.marks_obtained }}",
+        "marks_{{ result.student_id }}_{{ entry.subject_id }}": "{{ entry.marks_obtained|default_if_none:"" }}",
+        "absent_{{ result.student_id }}_{{ entry.subject_id }}": {{ entry.is_absent|yesno:"true,false" }},
       {% endfor %}
     {% endfor %}
   };
 
   const allInputs = Array.from(document.querySelectorAll('input.mark-input'));
+  const allChecks = Array.from(document.querySelectorAll('input.absent-check'));
 
   allInputs.forEach(input => {
     const val = existing[input.name];
     if (val) input.value = val;
   });
 
-  // ── ২. Enter key দিয়ে পরের ঘরে যাও (Tab এর মতো) ────────────
-  allInputs.forEach((input, idx) => {
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const next = allInputs[idx + 1];
-        if (next) next.focus();
+  allChecks.forEach(cb => {
+    const key = cb.name;
+    if (existing[key]) {
+      cb.checked = true;
+      const markInput = document.querySelector(
+        `input.mark-input[data-student="${cb.dataset.student}"][data-subject="${cb.dataset.subject}"]`
+      );
+      if (markInput) {
+        markInput.value = '';
+        markInput.classList.add('absent-mode');
+        markInput.setAttribute('readonly', true);
+      }
+    }
+  });
+
+  // ── ২. Absent checkbox toggle ────────────────────────────────
+  allChecks.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const markInput = document.querySelector(
+        `input.mark-input[data-student="${cb.dataset.student}"][data-subject="${cb.dataset.subject}"]`
+      );
+      if (!markInput) return;
+      if (cb.checked) {
+        markInput.value = '';
+        markInput.classList.add('absent-mode');
+        markInput.setAttribute('readonly', true);
+      } else {
+        markInput.classList.remove('absent-mode');
+        markInput.removeAttribute('readonly');
+        markInput.focus();
       }
     });
   });
 
-  // ── ৩. Full marks এর বেশি হলে লাল দেখাও ────────────────────
+  // ── ৩. Enter key দিয়ে পরের ঘরে যাও (checkbox এড়িয়ে) ──────────
+  allInputs.forEach((input, idx) => {
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        // Find next non-readonly input
+        for (let i = idx + 1; i < allInputs.length; i++) {
+          if (!allInputs[i].hasAttribute('readonly')) {
+            allInputs[i].focus();
+            return;
+          }
+        }
+      }
+    });
+  });
+
+  // ── ৪. Full marks এর বেশি হলে লাল দেখাও ────────────────────
   allInputs.forEach(input => {
     input.addEventListener('input', () => {
       const max = parseFloat(input.dataset.max);
@@ -222,7 +291,7 @@
     });
   });
 
-  // ── ৪. Submit এর আগে over-limit check করো ──────────────────
+  // ── ৫. Submit এর আগে over-limit check করো ──────────────────
   document.getElementById('markForm').addEventListener('submit', e => {
     const overInputs = allInputs.filter(i => i.classList.contains('is-over'));
     if (overInputs.length > 0) {

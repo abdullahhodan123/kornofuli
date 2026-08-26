@@ -315,15 +315,25 @@ def build_student_report_pdf(student, report_data, academy_name=None, tagline=No
             for subj in subjects_in_exam:
                 e = entries.get(subj.pk)
                 if e:
-                    status = 'Pass' if e.is_passed() else 'Fail'
-                    ex_data.append([
-                        subj.name + (' (O)' if subj.is_optional else ''),
-                        _fmt(e.marks_obtained),
-                        str(subj.full_marks),
-                        str(subj.pass_marks),
-                        f"{e.percentage()}%",
-                        status,
-                    ])
+                    if e.is_absent or e.marks_obtained is None:
+                        ex_data.append([
+                            subj.name + (' (O)' if subj.is_optional else ''),
+                            'Absent',
+                            str(subj.full_marks),
+                            str(subj.pass_marks),
+                            '0%',
+                            'Absent',
+                        ])
+                    else:
+                        status = 'Pass' if e.is_passed() else 'Fail'
+                        ex_data.append([
+                            subj.name + (' (O)' if subj.is_optional else ''),
+                            _fmt(e.marks_obtained),
+                            str(subj.full_marks),
+                            str(subj.pass_marks),
+                            f"{e.percentage()}%",
+                            status,
+                        ])
             ex_data.append([
                 'Total',
                 _fmt(result.total_marks()),
@@ -356,12 +366,15 @@ def build_student_report_pdf(student, report_data, academy_name=None, tagline=No
                 ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
             ]
 
-            # Color fail cells
+            # Color fail/absent cells
             for row_idx in range(1, len(ex_data) - 1):
                 status_val = ex_data[row_idx][-1]
                 if status_val == 'Fail':
                     ex_style_list.append(('TEXTCOLOR', (-1, row_idx), (-1, row_idx), RED))
                     ex_style_list.append(('FONTNAME', (-1, row_idx), (-1, row_idx), 'Helvetica-Bold'))
+                elif status_val == 'Absent':
+                    ex_style_list.append(('TEXTCOLOR', (-1, row_idx), (-1, row_idx), MUTED))
+                    ex_style_list.append(('FONTNAME', (-1, row_idx), (-1, row_idx), 'Helvetica-Oblique'))
                 else:
                     ex_style_list.append(('TEXTCOLOR', (-1, row_idx), (-1, row_idx), GREEN))
 

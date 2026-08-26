@@ -235,9 +235,13 @@
             {% for entry in result.mark_entries.all %}
               {% if entry.subject == subject %}
               <td style="text-align:center;">
-                <span {% if not entry.is_passed %}style="color:var(--red-text); font-weight:600;"{% endif %}>
-                  {{ entry.marks_obtained }}
-                </span>
+                {% if entry.is_absent %}
+                  <span style="color:var(--red-text); font-weight:600; font-size:11px;">Absent</span>
+                {% else %}
+                  <span {% if not entry.is_passed %}style="color:var(--red-text); font-weight:600;"{% endif %}>
+                    {{ entry.marks_obtained }}
+                  </span>
+                {% endif %}
               </td>
               {% endif %}
             {% endfor %}
