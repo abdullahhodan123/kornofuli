@@ -186,7 +186,7 @@ def user_logout(request):
  
 @teacher_required
 def class_list(request):
-    classes = ClassRoom.objects.all()
+    classes = ClassRoom.objects.annotate(student_count=Count('student'))
     return render(request, 'class_list.html', {'classes': classes})
 
 
@@ -379,6 +379,7 @@ def take_attendance(request, classroom_id):
     context = {
         'classroom':       classroom,
         'students':        students,
+        'student_count':   len(student_summary),
         'today':           today,
         'existing_map':    existing_map,
         'already_taken':   existing.exists(),

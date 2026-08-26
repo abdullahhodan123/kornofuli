@@ -178,10 +178,10 @@
         <i class="ti ti-calendar"></i> {{ exam.date|date:"d M Y" }}
       </span>
       <span class="meta-item">
-        <i class="ti ti-book"></i> {{ exam.subjects.count }} Subject
+        <i class="ti ti-book"></i> {{ exam.subjects.all|length }} Subject
       </span>
       <span class="meta-item">
-        <i class="ti ti-users"></i> {{ exam.results.count }} Student
+        <i class="ti ti-users"></i> {{ exam.results.all|length }} Student
       </span>
     </div>
 

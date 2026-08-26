@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Avg, Max, Min, Count
+from django.db.models import Avg, Max, Min, Count, Q
 from collections import Counter
 from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
@@ -22,13 +22,20 @@ from accounts.views import send_sms, teacher_required
 def send_result_sms(exam, students):
     """Background এ সব guardian কে result SMS পাঠাও"""
     def _send():
+        results_map = {
+            r.student_id: r for r in
+            Result.objects.filter(student__in=students, exam=exam)
+            .select_related('student')
+            .prefetch_related('mark_entries__subject')
+        }
+
         for student in students:
             try:
-                result = Result.objects.prefetch_related(
-                    'mark_entries__subject'
-                ).get(student=student, exam=exam)
+                result = results_map.get(student.pk)
+                if result is None:
+                    continue
 
-                entries = result.mark_entries.select_related('subject').all()
+                entries = list(result.mark_entries.all())
                 if not entries:
                     continue
 
@@ -104,7 +111,7 @@ def send_result_sms(exam, students):
                 if student.guardian_phone_2:
                     send_sms(student.guardian_phone_2, message)
 
-            except Result.DoesNotExist:
+            except Exception:
                 pass
 
     thread = threading.Thread(target=_send)
@@ -165,7 +172,9 @@ def exam_detail(request, pk):
     subjects = exam.subjects.all()
     results  = exam.results.prefetch_related('mark_entries__subject').select_related('student', 'student__classroom').order_by('serial')
     return render(request, 'exam_detail.html', {
-        'exam': exam, 'subjects': subjects, 'results': results
+        'exam': exam, 'subjects': subjects, 'results': results,
+        'subject_count': subjects.count(),
+        'result_count': results.count(),
     })
 
 
@@ -292,16 +301,30 @@ def exam_result_summary(request, exam_pk):
     )
     agg_map = {a['subject_id']: a for a in agg}
 
+    # Bulk-fetch best/worst entries — one query instead of 2N
+    bw_conditions = []
+    for subject in subjects:
+        a = agg_map.get(subject.id)
+        if a and a['entry_count'] > 0:
+            bw_conditions.append(Q(subject=subject, marks_obtained=a['best_marks'], is_absent=False))
+            bw_conditions.append(Q(subject=subject, marks_obtained=a['worst_marks'], is_absent=False))
+
+    bw_entries = {}
+    if bw_conditions:
+        combined = bw_conditions[0]
+        for q in bw_conditions[1:]:
+            combined |= q
+        for e in MarkEntry.objects.filter(combined).select_related('result__student', 'subject'):
+            key = (e.subject_id, float(e.marks_obtained))
+            if key not in bw_entries:
+                bw_entries[key] = e
+
     subject_summary = []
     for subject in subjects:
         a = agg_map.get(subject.id)
         if a and a['entry_count'] > 0:
-            best = MarkEntry.objects.filter(
-                subject=subject, marks_obtained=a['best_marks']
-            ).select_related('result__student').first()
-            worst = MarkEntry.objects.filter(
-                subject=subject, marks_obtained=a['worst_marks']
-            ).select_related('result__student').first()
+            best = bw_entries.get((subject.id, float(a['best_marks'])))
+            worst = bw_entries.get((subject.id, float(a['worst_marks'])))
             avg = round(float(a['avg_marks']), 2)
         else:
             best = worst = avg = None
@@ -312,6 +335,7 @@ def exam_result_summary(request, exam_pk):
         'results': results, 'subject_summary': subject_summary,
         'pass_count': pass_count, 'fail_count': fail_count,
         'grade_breakdown': grade_breakdown,
+        'result_count': results.count(),
     })
 
 

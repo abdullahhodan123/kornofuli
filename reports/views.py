@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
 
 from accounts.models import Student, ClassRoom
-from .utils import get_full_report
+from .utils import get_full_report, get_bulk_reports
 from .pdf_utils import build_student_report_pdf
 
 
@@ -83,9 +83,14 @@ def bulk_student_report_pdf(request, classroom_id):
     last_n = _parse_last_n(request)
     zip_buf = BytesIO()
 
+    # Bulk-fetch all data in ~6 queries instead of 3N
+    reports = get_bulk_reports(students, last_n)
+
     with zipfile.ZipFile(zip_buf, 'w', zipfile.ZIP_DEFLATED) as zf:
         for student in students:
-            report = get_full_report(student, last_n)
+            report = reports.get(student.id)
+            if report is None:
+                continue
             pdf_buf = build_student_report_pdf(
                 student, report,
                 academy_name=academy_name,
