@@ -1,6 +1,7 @@
 /* KBA - Progressive Web App service worker */
 const CACHE_NAME = 'ksa-pwa-v1';
 const PRECACHE_URLS = [
+  '/',
   '/accounts/login/',
   '/manifest.json',
   '/static/icons/icon-192.png',
@@ -36,16 +37,20 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // Navigation: network first, fall back to the cached login page when offline.
+  // Navigation: network first, fall back to cached pages when offline.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put('/accounts/login/', copy));
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
           return response;
         })
-        .catch(() => caches.match('/accounts/login/'))
+        .catch(() => caches.match(request).then((cached) => {
+          if (cached) return cached;
+          // Fallback: logged in hole home, na hole login page
+          return caches.match('/');
+        }))
     );
     return;
   }

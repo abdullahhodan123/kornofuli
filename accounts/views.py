@@ -149,6 +149,9 @@ def add_student(request):
 
 
 def user_login(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+
     if request.method == 'POST':
         form = UserLoginForm(request, data=request.POST)
         if form.is_valid():

@@ -26,11 +26,16 @@ def pwa_manifest(request):
     short_name  = name if len(name) <= 12 else 'KBA'
     theme_color = '#0C447C'
 
+    if request.user.is_authenticated:
+        start_url = '/'
+    else:
+        start_url = '/accounts/login/'
+
     manifest = {
         'name': name,
         'short_name': short_name,
         'description': 'Coaching center management: exams, results, attendance & more.',
-        'start_url': '/accounts/login/',
+        'start_url': start_url,
         'scope': '/',
         'display': 'standalone',
         'orientation': 'portrait',
