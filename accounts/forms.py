@@ -83,6 +83,53 @@ class StudentAddForm(forms.Form):
         return user
 
 
+class StudentEditForm(forms.Form):
+    """Teacher existing student-কে edit করতে পারবে।"""
+
+    full_name = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={'placeholder': 'Mohammad Rahman'})
+    )
+
+    school_name = forms.CharField(
+        max_length=200,
+        widget=forms.TextInput(attrs={'placeholder': 'Dhaka Government High School'})
+    )
+
+    classroom = forms.ModelChoiceField(
+        queryset=ClassRoom.objects.all()
+    )
+
+    guardian_phone_1 = forms.CharField(
+        max_length=20,
+        required=True,
+        widget=forms.TextInput(attrs={'placeholder': '01XXXXXXXXX'})
+    )
+
+    guardian_phone_2 = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'placeholder': '01XXXXXXXXX (optional)'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.student = kwargs.pop('student', None)
+        super().__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        student = self.student
+        student.full_name = self.cleaned_data['full_name']
+        student.school_name = self.cleaned_data['school_name']
+        student.classroom = self.cleaned_data['classroom']
+        student.guardian_phone_1 = self.cleaned_data['guardian_phone_1']
+        student.guardian_phone_2 = self.cleaned_data['guardian_phone_2']
+
+        if commit:
+            student.save()
+
+        return student
+
+
 class UserLoginForm(AuthenticationForm):
 
     username = forms.CharField(

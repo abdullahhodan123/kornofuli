@@ -258,6 +258,17 @@
     opacity: 1;
   }
 
+  .pay-btn--edit {
+    background: var(--blue-pale);
+    border-color: var(--blue-light);
+    color: var(--blue-dark);
+    text-decoration: none;
+  }
+  .pay-btn--edit:hover {
+    background: var(--blue-light);
+    opacity: 1;
+  }
+
   .ksa-empty {
     text-align: center;
     padding: 3.5rem 1rem;
@@ -422,13 +433,19 @@
             </a>
           </td>
           <td>
-            <button
-              class="pay-btn pay-btn--delete"
-              data-url="{% url 'delete_student' item.student.id %}"
-              data-name="{{ item.student.full_name }}"
-              data-no-loader>
-              <i class="ti ti-trash" aria-hidden="true"></i> Delete
-            </button>
+            <div style="display: flex; gap: 6px;">
+              <a href="{% url 'edit_student' item.student.id %}"
+                 class="pay-btn pay-btn--edit">
+                <i class="ti ti-pencil" aria-hidden="true"></i> Edit
+              </a>
+              <button
+                class="pay-btn pay-btn--delete"
+                data-url="{% url 'delete_student' item.student.id %}"
+                data-name="{{ item.student.full_name }}"
+                data-no-loader>
+                <i class="ti ti-trash" aria-hidden="true"></i> Delete
+              </button>
+            </div>
           </td>
         </tr>
         {% endfor %}

@@ -17,6 +17,7 @@ from django.conf import settings
  
 from .forms import (
     StudentAddForm,
+    StudentEditForm,
     ClassRoomForm,
     UserLoginForm
 )
@@ -146,6 +147,31 @@ def add_student(request):
         form = StudentAddForm()
 
     return render(request, 'add_student.html', {'form': form})
+
+
+@teacher_required
+def edit_student(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+
+    if request.method == 'POST':
+        form = StudentEditForm(request.POST, student=student)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"{student.full_name} updated successfully.")
+            return redirect('student_list', class_id=student.classroom_id)
+    else:
+        form = StudentEditForm(
+            student=student,
+            initial={
+                'full_name': student.full_name,
+                'school_name': student.school_name,
+                'classroom': student.classroom,
+                'guardian_phone_1': student.guardian_phone_1,
+                'guardian_phone_2': student.guardian_phone_2,
+            }
+        )
+
+    return render(request, 'edit_student.html', {'form': form, 'student': student})
 
 
 def user_login(request):
