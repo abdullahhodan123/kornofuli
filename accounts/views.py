@@ -107,10 +107,9 @@ def send_payment_sms(student, month, year):
     month_name = month_names_bn.get(month, str(month))
  
     message = (
-        f"প্রিয় অভিভাবক,\n\n"
+        f"প্রিয় অভিভাবক,\n"
         f"আপনার সন্তান {student.full_name}-এর {month_name} {year} "
-        f"মাসের বেতন সফলভাবে গ্রহণ করা হয়েছে।\n\n"
-        f"ধন্যবাদান্তে,\n"
+        f"মাসের বেতন  গ্রহণ করা হয়েছে।\n"
         f"কর্ণফুলী বিজ্ঞান একাডেমি"
     )
  
