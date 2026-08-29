@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from datetime import date, time, datetime
 from django.utils import timezone
 from django.db.models import Count, Q, Subquery, BooleanField
+import re
 import requests
 import threading
 from django.conf import settings
@@ -74,7 +75,7 @@ def send_sms(to_number, message):
  
  
 def send_attendance_sms(student, status, date):
-    status_text = "অনুপস্থিত" if status == 'absent' else "দেরিতে এসেছে"
+    status_text = "অনুপস্থিত" if status == 'absent' else "দেড়িতে এসেছে"
     message = (
         f"প্রিয় অভিভাবক,\n\n"
         f"আপনার সন্তান {student.full_name} "
@@ -214,7 +215,15 @@ def user_logout(request):
  
 @teacher_required
 def class_list(request):
-    classes = ClassRoom.objects.annotate(student_count=Count('student'))
+    classes = list(ClassRoom.objects.annotate(student_count=Count('student')))
+
+    def sort_key(room):
+        match = re.search(r'(\d+)\s*([A-Za-z]?)', room.name or '')
+        num = int(match.group(1)) if match else 0
+        sec = match.group(2) if match and match.group(2) else ''
+        return (-num, sec)
+
+    classes.sort(key=sort_key)
     return render(request, 'class_list.html', {'classes': classes})
 
 
