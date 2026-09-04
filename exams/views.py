@@ -96,12 +96,23 @@ def send_result_sms(exam, students):
 
 
 
-    f"প্রিয় অভিভাবক,\n"
-    f"{student.full_name}\n"
+    # f"প্রিয় অভিভাবক,\n"
+    # f"{student.full_name}\n"
+    # f"{subject_text}\n"
+    # f"মোট {total}/{full} | GPA {gpa} | {grade}\n"
+    # f"ধন্যবাদ,\n"
+    # f"কর্ণফুলী বিজ্ঞান একাডেমি"
+
+
+
+    
+    f"সম্মানিত অভিভাবক,\n"
+    f"{student.full_name} এর ফলাফল:\n"
+    f"পরীক্ষা: {exam.name}\n"
     f"{subject_text}\n"
-    f"মোট {total}/{full} | GPA {gpa} | {grade}\n"
-    f"ধন্যবাদ,\n"
-    f"কর্ণফুলী বিজ্ঞান একাডেমি"
+    f"মোট: {total}/{full} | GPA: {gpa} | গ্রেড: {grade} | {status}\n"
+    f"-কর্ণফুলী বিজ্ঞান একাডেমি"
+
 
 )
 

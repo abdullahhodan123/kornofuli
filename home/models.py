@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 
 
 class SiteSettings(models.Model):
-    academy_name = models.CharField(max_length=200, default="Pakundia Coaching Center")
+    academy_name = models.CharField(max_length=200, default="Kornofuli Biggan Academy")
     tagline = models.CharField(max_length=300, default="Pakundia, Kishoreganj — Premier Coaching Center")
     established_year = models.PositiveIntegerField(default=2009)
     hero_heading = models.CharField(max_length=300, default="Build Your Future with")

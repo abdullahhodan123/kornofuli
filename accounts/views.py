@@ -77,7 +77,7 @@ def send_sms(to_number, message):
 def send_attendance_sms(student, status, date):
     status_text = "অনুপস্থিত" if status == 'absent' else "দেড়িতে এসেছে"
     message = (
-        f"প্রিয় অভিভাবক,\n\n"
+        f"সম্মানিত অভিভাবক,\n\n"
         f"আপনার সন্তান {student.full_name} "
         f"আজ ({date.strftime('%d/%m/%Y')}) ক্লাসে {status_text}।\n\n"
         f"ধন্যবাদ,\n"
@@ -108,7 +108,7 @@ def send_payment_sms(student, month, year):
     month_name = month_names_bn.get(month, str(month))
  
     message = (
-        f"প্রিয় অভিভাবক,\n"
+        f"সম্মানিত অভিভাবক,\n"
         f"আপনার সন্তান {student.full_name}-এর {month_name} {year} "
         f"মাসের বেতন  গ্রহণ করা হয়েছে।\n"
         f"কর্ণফুলী বিজ্ঞান একাডেমি"

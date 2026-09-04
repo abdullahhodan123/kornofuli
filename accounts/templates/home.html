@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ settings.academy_name|default:"Pakundia Coaching Center" }} — Pakundia, Kishoreganj — Premier Coaching Center{% endblock %}
+{% block title %}{{ settings.academy_name|default:"Kornofuli Biggan Academy" }} — Pakundia, Kishoreganj — Premier Coaching Center{% endblock %}
 {% block page_title %}Home{% endblock %}
 
 {% block extra_css %}
@@ -826,7 +826,7 @@
     </div>
     <h1 class="hero-heading">
       {{ settings.hero_heading|default:"Build Your Future with" }}<br>
-      <em>{{ settings.academy_name|default:"Pakundia Coaching Center" }}</em>
+      <em>{{ settings.academy_name|default:"Kornofuli Biggan Academy" }}</em>
     </h1>
     <p class="hero-sub">{{ settings.hero_subtext|default:"Expert coaching for SSC & HSC students in Physics, Chemistry, Biology and Mathematics. Small batches, experienced teachers, proven results." }}</p>
     <div class="hero-btns">
@@ -1066,7 +1066,7 @@ function openEdit(pk, title, body, type, pinned) {
   <div class="ks-section">
     <div class="ks-section-eyebrow"><i class="ti ti-star"></i> Our Edge</div>
     <h2 class="ks-section-heading">Why Choose Us</h2>
-    <p class="ks-section-sub">What makes Pakundia Coaching Center different from the rest.</p>
+    <p class="ks-section-sub">What makes Kornofuli Biggan Academy different from the rest.</p>
     <div class="features-grid">
       <div class="feat-card">
         <div class="feat-icon"><i class="ti ti-users-group"></i></div>
@@ -1307,7 +1307,7 @@ function openEdit(pk, title, body, type, pinned) {
   <div class="ks-section">
     <div class="ks-section-eyebrow"><i class="ti ti-photo"></i> Campus Life</div>
     <h2 class="ks-section-heading">Gallery</h2>
-    <p class="ks-section-sub">A glimpse into life at Pakundia Coaching Center.</p>
+    <p class="ks-section-sub">A glimpse into life at Kornofuli Biggan Academy.</p>
     <div class="gallery-grid">
       {% for img in gallery %}
       <div class="gallery-item">
@@ -1382,7 +1382,7 @@ function openEdit(pk, title, body, type, pinned) {
          <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4312.487628748071!2d90.67381837590992!3d24.32715656638922!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x375687a2a617418d%3A0xd510db8c34b2ad91!2z4KaV4Kaw4KeN4Kaj4Kar4KeB4Kay4KeAIOCmrOCmv-CmnOCnjeCmnuCmvuCmqCDgpo_gppXgpr7gpqHgp4fgpq7gpr8!5e1!3m2!1sen!2sbd!4v1783418145331!5m2!1sen!2sbd" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
         {% else %}
           <i class="ti ti-map-pin" aria-hidden="true"></i>
-          <span style="font-weight: 600; font-family: var(--font-display);">{{ settings.academy_name|default:"Pakundia Coaching Center" }}</span>
+          <span style="font-weight: 600; font-family: var(--font-display);">{{ settings.academy_name|default:"Kornofuli Biggan Academy" }}</span>
           <span style="font-size: 12.5px; color: var(--blue-mid);">Pakundia, Kishoreganj</span>
           {% if settings.google_maps_url %}
           <a href="{{ settings.google_maps_url }}" target="_blank" rel="noopener"
