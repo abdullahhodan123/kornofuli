@@ -914,16 +914,12 @@
                        font-size:12px; cursor:pointer;">
                 <i class="ti ti-edit"></i> Edit
               </button>
-              <form method="post" action="{% url 'notice_delete' notice.pk %}"
-                    style="display:inline;"
-                    onsubmit="return confirm('Delete this notice?')">
-                {% csrf_token %}
-                <button type="submit"
-                  style="background:#FEE2E2; border:1px solid #FCA5A5; color:#991B1B;
-                         border-radius:6px; padding:3px 10px; font-size:12px; cursor:pointer;">
-                  <i class="ti ti-trash"></i> Delete
-                </button>
-              </form>
+              <button data-no-loader
+                onclick="openDelete({{ notice.pk }}, '{{ notice.title|escapejs }}')"
+                style="background:#FEE2E2; border:1px solid #FCA5A5; color:#991B1B;
+                       border-radius:6px; padding:3px 10px; font-size:12px; cursor:pointer;">
+                <i class="ti ti-trash"></i> Delete
+              </button>
               {% endif %}
             </div>
             <div class="notice-text">{{ notice.body|linebreaksbr }}</div>
@@ -1020,6 +1016,45 @@
   </div>
 </div>
 
+<div id="modal-delete" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55);
+     z-index:9999; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:#fff; border-radius:16px; width:100%; max-width:400px;
+       box-shadow:0 20px 50px rgba(0,0,0,0.25); overflow:hidden;">
+    <div style="padding:24px 24px 0; text-align:center;">
+      <div style="width:56px; height:56px; border-radius:50%; margin:0 auto 14px;
+           background:#FEE2E2; color:#DC2626; display:flex; align-items:center; justify-content:center;
+           font-size:26px;">
+        <i class="ti ti-trash" aria-hidden="true"></i>
+      </div>
+      <h3 style="font-family:var(--font-display); font-size:18px; font-weight:700;
+           color:var(--gray-text); margin:0 0 8px;">Delete Notice?</h3>
+      <p style="font-size:13.5px; color:var(--gray-sub); margin:0 0 4px; line-height:1.6;">
+        You are about to permanently delete
+        <strong id="delete-notice-title" style="color:var(--gray-text);"></strong>.
+      </p>
+      <p style="font-size:12.5px; color:var(--gray-muted); margin:0 0 20px;">
+        This action cannot be undone.
+      </p>
+    </div>
+    <div style="display:flex; border-top:1px solid var(--gray-border);">
+      <button type="button" onclick="document.getElementById('modal-delete').style.display='none'"
+        style="flex:1; padding:12px 0; border:none; background:#fff; color:var(--gray-text);
+               font-size:14px; font-weight:600; cursor:pointer; border-right:1px solid var(--gray-border);
+               transition:background 0.15s;">
+        Cancel
+      </button>
+      <form method="post" id="delete-form" action="" style="flex:1; display:flex;">
+        {% csrf_token %}
+        <button type="submit" data-no-loader
+          style="flex:1; padding:12px 0; border:none; background:#DC2626; color:#fff;
+                 font-size:14px; font-weight:600; cursor:pointer; transition:background 0.15s;">
+          <i class="ti ti-trash" aria-hidden="true"></i> Delete Notice
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
 function openEdit(pk, title, body, type, pinned) {
   document.getElementById('edit-form').action = `/notice/${pk}/edit/`;
@@ -1029,6 +1064,18 @@ function openEdit(pk, title, body, type, pinned) {
   document.getElementById('edit-pinned').checked = pinned;
   document.getElementById('modal-edit').style.display = 'flex';
 }
+
+function openDelete(pk, title) {
+  document.getElementById('delete-form').action = `/notice/${pk}/delete/`;
+  document.getElementById('delete-notice-title').textContent = `"${title}"`;
+  document.getElementById('modal-delete').style.display = 'flex';
+}
+
+document.getElementById('modal-delete').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-delete')) {
+    document.getElementById('modal-delete').style.display = 'none';
+  }
+});
 </script>
 {% endif %}
 
