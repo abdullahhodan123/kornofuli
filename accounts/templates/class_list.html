@@ -127,6 +127,12 @@
     border: 0.5px solid var(--green-border);
   }
 
+  .cl-action-btn.notice {
+    background: var(--amber-bg);
+    color: var(--amber-text);
+    border: 0.5px solid var(--amber-border);
+  }
+
   .cl-edit-corner {
     position: absolute;
     top: 10px;
@@ -220,6 +226,10 @@
         <a href="{% url 'take_attendance' class.id %}" class="cl-action-btn attendance">
           <i class="ti ti-clipboard-check" aria-hidden="true"></i>
           Take Attendance
+        </a>
+        <a href="{% url 'class_notice_add' class_id=class.id %}" class="cl-action-btn notice">
+          <i class="ti ti-bell" aria-hidden="true"></i>
+          Send Notice
         </a>
       </div>
 

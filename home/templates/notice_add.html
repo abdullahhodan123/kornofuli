@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}New Notice{% if classroom %} – {{ classroom.name }}{% endif %}{% endblock %}
+{% block page_title %}New Notice{% if classroom %} – {{ classroom.name }}{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .n-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem;
+  }
+
+  .n-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--blue-main);
+    text-decoration: none;
+    margin-bottom: 1.2rem;
+    transition: color 0.15s;
+  }
+  .n-back-btn:hover { color: var(--blue-dark); }
+
+  .n-page-header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--blue-dark);
+    margin-bottom: 4px;
+  }
+
+  .n-page-header p { font-size: 13.5px; color: var(--gray-muted); }
+
+  .n-card {
+    background: var(--white);
+    border: 1px solid var(--gray-border);
+    border-radius: var(--radius);
+    padding: 1.6rem;
+    margin-top: 1.6rem;
+  }
+
+  .n-class-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--blue-main);
+    background: var(--blue-pale);
+    border: 1px solid var(--blue-light);
+    border-radius: 999px;
+    padding: 4px 14px;
+    margin-bottom: 14px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+  .field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .field input, .field select, .field textarea {
+    border: 0.5px solid var(--gray-border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: 13.5px;
+    color: var(--gray-text);
+    font-family: inherit;
+    background: #FAFAF8;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--blue-mid);
+    box-shadow: 0 0 0 3px rgba(55,138,221,0.12);
+    background: var(--white);
+  }
+  .field input[type="checkbox"] { width: auto; }
+  .n-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--gray-sub);
+    margin-bottom: 16px;
+  }
+
+  .n-actions { display: flex; gap: 10px; margin-top: 0.5rem; flex-wrap: wrap; }
+  .n-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 22px;
+    background: var(--blue-main);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .n-submit:hover { background: var(--blue-dark); }
+  .n-cancel {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 22px;
+    border: 0.5px solid var(--gray-border);
+    border-radius: var(--radius-sm);
+    color: var(--gray-text);
+    font-size: 14px;
+    text-decoration: none;
+    background: #fff;
+  }
+  .n-cancel:hover { background: var(--gray-bg); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="n-page">
+
+  <a href="{% url 'class_list' %}" class="n-back-btn">
+    <i class="ti ti-arrow-left"></i>
+    Back to All Classes
+  </a>
+
+  <div class="n-page-header">
+    <h1>New Notice</h1>
+    <p>Write a notice and it will go to all students & guardians of the class.</p>
+  </div>
+
+  <div class="n-card">
+    {% if classroom %}
+    <span class="n-class-badge">
+      <i class="ti ti-door"></i>
+      {{ classroom.name }}
+    </span>
+    {% endif %}
+
+    <form method="post" action="{% if classroom %}{% url 'class_notice_add' class_id=classroom.id %}{% else %}{% url 'notice_add' %}{% endif %}">
+      {% csrf_token %}
+      <div class="field">
+        <label for="id_title">Title</label>
+        <input id="id_title" name="title" placeholder="e.g. Class Test Tomorrow" required>
+      </div>
+      <div class="field">
+        <label for="id_body">Notice Body</label>
+        <textarea id="id_body" name="body" rows="5" placeholder="Write the notice details..." required></textarea>
+      </div>
+      <div class="field">
+        <label for="id_notice_type">Notice Type</label>
+        <select id="id_notice_type" name="notice_type">
+          <option value="info">Info</option>
+          <option value="warning">Warning</option>
+          <option value="success">Success</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+      <label class="n-check">
+        <input type="checkbox" name="is_pinned"> Pin this notice
+      </label>
+      <div class="n-actions">
+        <button class="n-submit" type="submit">
+          <i class="ti ti-send"></i>
+          Publish Notice
+        </button>
+        <a class="n-cancel" href="{% url 'class_list' %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

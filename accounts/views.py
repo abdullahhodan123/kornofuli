@@ -29,10 +29,17 @@ from .forms import (
 #  Authorization
 # ─────────────────────────────────────────
 
+def is_teacher(user):
+    """Teacher OR superuser (admins with an empty role are allowed too)."""
+    return user.is_authenticated and (
+        user.is_superuser or user.role == 'teacher'
+    )
+
+
 def teacher_required(view_func):
     @login_required
     def wrapper(request, *args, **kwargs):
-        if request.user.role != 'teacher':
+        if not is_teacher(request.user):
             messages.error(request, 'শুধুমাত্র Teacher প্রবেশ করতে পারবেন।')
             return redirect('home')
         return view_func(request, *args, **kwargs)

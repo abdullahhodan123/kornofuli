@@ -42,8 +42,8 @@ class ResultAdmin(admin.ModelAdmin):
 
 @admin.register(Notice)
 class NoticeAdmin(admin.ModelAdmin):
-    list_display = ("title", "notice_type", "is_pinned", "published_at")
-    list_filter = ("notice_type", "is_pinned")
+    list_display = ("title", "notice_type", "classroom", "is_pinned", "published_at")
+    list_filter = ("notice_type", "is_pinned", "classroom")
     search_fields = ("title",)
 
 

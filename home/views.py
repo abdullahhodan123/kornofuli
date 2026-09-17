@@ -1,18 +1,21 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages as django_messages
 from django import forms as djforms
 from django.core.paginator import Paginator
 from django.db import models
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.cache import never_cache
 from django.conf import settings as django_settings
+import threading
 
 from .models import (
     SiteSettings, Course, Teacher, Result,
     Notice, GalleryImage, FAQ, BatchSchedule
 )
 
-from accounts.views import teacher_required
+from accounts.models import Student, ClassRoom
+from accounts.views import teacher_required, send_sms, is_teacher
 
 
 # ─────────────────────────────────────────
@@ -77,12 +80,12 @@ def home_view(request):
     )
     latest_year = Result.objects.values_list("year", flat=True).first()
     results     = Result.objects.filter(year=latest_year) if latest_year else []
-    notices     = Notice.objects.only('title', 'body', 'notice_type', 'is_pinned', 'published_at')
+    notices     = Notice.objects.select_related('classroom')
     gallery     = GalleryImage.objects.only('title', 'image', 'caption', 'order')[:8]
     faqs        = FAQ.objects.only('question', 'answer', 'order')
     schedules   = BatchSchedule.objects.select_related("course", "teacher").all()
 
-    is_teacher  = request.user.is_authenticated and request.user.role == 'teacher'
+    is_teacher_ctx = is_teacher(request.user)
 
     return render(request, "home.html", {
         "settings":    settings,
@@ -94,27 +97,67 @@ def home_view(request):
         "gallery":     gallery,
         "faqs":        faqs,
         "schedules":   schedules,
-        "is_teacher":  is_teacher,
+        "is_teacher":  is_teacher_ctx,
     })
 
 
 @login_required
-def notice_add(request):
-    if request.user.role != 'teacher':
+def notice_add(request, class_id=None):
+    if not is_teacher(request.user):
         return redirect('home')
+
+    classroom = None
+    if class_id:
+        classroom = get_object_or_404(ClassRoom, pk=class_id)
+
     if request.method == 'POST':
-        Notice.objects.create(
+        notice = Notice.objects.create(
             title=request.POST['title'],
             body=request.POST['body'],
-            notice_type=request.POST.get('notice_type', 'general'),
+            notice_type=request.POST.get('notice_type', 'info'),
             is_pinned=request.POST.get('is_pinned') == 'on',
+            classroom=classroom,
         )
-    return redirect('home')
+
+        if classroom:
+            send_class_notice_sms(classroom, notice)
+            django_messages.success(request, f'"{classroom.name}" শ্রেণির জন্য Notice পাঠানো হয়েছে।')
+            return redirect('class_list')
+
+        return redirect('home')
+
+    return render(request, 'notice_add.html', {'classroom': classroom})
+
+
+def send_class_notice_sms(classroom, notice):
+    """Background-এ class-এর সব approved student-এর guardian কে notice SMS পাঠাও"""
+    def _send():
+        site = SiteSettings.objects.first()
+        academy_name = site.academy_name if site else 'KBA'
+        students = Student.objects.filter(
+            classroom=classroom,
+            is_approved=True,
+        )
+        message = (
+            f"সম্মানিত অভিভাবক,"
+            f"{classroom.name} এর নোটিশ:\n"
+            f"{notice.body}\n"
+            f"-কর্ণফুলী বিজ্ঞান একাডেমি"
+        )
+        for student in students:
+            if student.guardian_phone_1:
+                send_sms(student.guardian_phone_1, message)
+            if student.guardian_phone_2:
+                send_sms(student.guardian_phone_2, message)
+
+    thread = threading.Thread(target=_send)
+    thread.daemon = True
+    thread.start()
 
 
 @login_required
 def notice_edit(request, pk):
-    if request.user.role != 'teacher':
+    if not is_teacher(request.user):
         return redirect('home')
     notice = get_object_or_404(Notice, pk=pk)
     if request.method == 'POST':
@@ -128,7 +171,7 @@ def notice_edit(request, pk):
 
 @login_required
 def notice_delete(request, pk):
-    if request.user.role != 'teacher':
+    if not is_teacher(request.user):
         return redirect('home')
     notice = get_object_or_404(Notice, pk=pk)
     notice.delete()

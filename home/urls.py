@@ -6,6 +6,7 @@ urlpatterns = [
     path('manifest.json',  views.pwa_manifest,  name='pwa_manifest'),
     path('sw.js',          views.pwa_sw,        name='pwa_sw'),
     path('notice/add/',    views.notice_add,    name='notice_add'),
+    path('notice/add/<int:class_id>/', views.notice_add, name='class_notice_add'),
     path('notice/<int:pk>/edit/',   views.notice_edit,   name='notice_edit'),
     path('notice/<int:pk>/delete/', views.notice_delete, name='notice_delete'),
     path('manage/settings/',          views.manage_settings, name='manage_settings'),

@@ -33,10 +33,12 @@ urlpatterns = [
 # Django 6-এর static() DEBUG=False-এ ফাঁকা list ফেরত দেয় (No-op), তাই সরাসরি
 # serve view দিয়ে pattern বানানো হয়েছে। বাস্তব production-এ nginx/caddy থাকলে
 # এই ব্লক মুছে দিলেই চলবে।
-media_url = settings.MEDIA_URL.lstrip('/')
+# Media ফাইল (শিক্ষক ছবি, gallery) — dev/prod যেকোনো পরিবেশে serve হবে।
+# USE_SUPABASE_STORAGE চালু থাকলে MEDIA_URL সম্পূর্ণ CDN URL হয় (যা request
+# path-এর সাথে match করে না), তাই local /media/ route আলাদাভাবে দেওয়া হয়েছে।
 urlpatterns += [
     re_path(
-        r'^%s(?P<path>.*)$' % re.escape(media_url),
+        r'^media/(?P<path>.*)$',
         serve,
         kwargs={'document_root': settings.MEDIA_ROOT}
     ),

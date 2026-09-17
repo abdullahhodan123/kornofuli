@@ -167,10 +167,11 @@ if USE_SUPABASE_STORAGE:
     AWS_S3_CUSTOM_DOMAIN = config("SUPABASE_STORAGE_CUSTOM_DOMAIN")
     AWS_QUERYSTRING_AUTH = False
     MEDIA_URL = f"https://{config('SUPABASE_STORAGE_CUSTOM_DOMAIN')}/"
-    MEDIA_ROOT = None
 else:
     MEDIA_URL = 'media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
+# Local মিডিয়া ফোল্ডার (BASE_DIR/media) সবসময় serve হবে — teacher ছবি, gallery
+# ইত্যাদি hardcoded path-এর জন্য MEDIA_ROOT স্বাভাবিক থাকতে হবে।
+MEDIA_ROOT = BASE_DIR / 'media'
 AUTH_USER_MODEL = 'accounts.User'
 
 BULKSMS_API_KEY = config("BULKSMS_API_KEY")

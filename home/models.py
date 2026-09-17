@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from accounts.models import ClassRoom
 
 
 class SiteSettings(models.Model):
@@ -153,6 +154,14 @@ class Notice(models.Model):
     notice_type = models.CharField(max_length=20, choices=NOTICE_TYPE_CHOICES, default="info")
     is_pinned = models.BooleanField(default=False)
     attachment = models.FileField(upload_to="notices/", null=True, blank=True)
+    classroom = models.ForeignKey(
+        ClassRoom,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='notices',
+        help_text="Leave empty for a site-wide notice; select a class for class-specific notice."
+    )
     published_at = models.DateTimeField(auto_now_add=True)
    
     

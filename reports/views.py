@@ -8,6 +8,7 @@ from django.http import HttpResponse
 from django.views.decorators.cache import never_cache
 
 from accounts.models import Student, ClassRoom
+from accounts.views import is_teacher
 from .utils import get_full_report, get_bulk_reports
 from .pdf_utils import build_student_report_pdf
 
@@ -23,7 +24,7 @@ def _parse_last_n(request):
 @never_cache
 @login_required
 def teacher_student_report(request, student_id):
-    if request.user.role != 'teacher':
+    if not is_teacher(request.user):
         raise PermissionDenied
     student = get_object_or_404(
         Student.objects.select_related('classroom', 'user'),
@@ -39,7 +40,7 @@ def teacher_student_report(request, student_id):
 @never_cache
 @login_required
 def student_report_pdf(request, student_id):
-    if request.user.role != 'teacher':
+    if not is_teacher(request.user):
         raise PermissionDenied
     student = get_object_or_404(
         Student.objects.select_related('classroom', 'user'),
@@ -63,7 +64,7 @@ def student_report_pdf(request, student_id):
 @never_cache
 @login_required
 def bulk_student_report_pdf(request, classroom_id):
-    if request.user.role != 'teacher':
+    if not is_teacher(request.user):
         raise PermissionDenied
 
     classroom = get_object_or_404(ClassRoom, id=classroom_id)
