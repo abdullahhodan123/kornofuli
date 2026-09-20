@@ -8,6 +8,11 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.cache import never_cache
 from django.conf import settings as django_settings
 import threading
+import logging
+from django.db import connection
+
+logger = logging.getLogger(__name__)
+
 
 from .models import (
     SiteSettings, Course, Teacher, Result,
@@ -129,31 +134,72 @@ def notice_add(request, class_id=None):
     return render(request, 'notice_add.html', {'classroom': classroom})
 
 
+# def send_class_notice_sms(classroom, notice):
+#     """Background-এ class-এর সব approved student-এর guardian কে notice SMS পাঠাও"""
+#     def _send():
+#         site = SiteSettings.objects.first()
+#         academy_name = site.academy_name if site else 'KBA'
+#         students = Student.objects.filter(
+#             classroom=classroom,
+#             is_approved=True,
+#         )
+#         message = (
+#             f"সম্মানিত অভিভাবক,"
+#             f"{classroom.name} এর নোটিশ:\n"
+#             f"{notice.body}\n"
+#             f"-কর্ণফুলী বিজ্ঞান একাডেমি"
+#         )
+#         for student in students:
+#             if student.guardian_phone_1:
+#                 send_sms(student.guardian_phone_1, message)
+#             if student.guardian_phone_2:
+#                 send_sms(student.guardian_phone_2, message)
+
+#     thread = threading.Thread(target=_send)
+#     thread.daemon = True
+#     thread.start()
+
+
+
 def send_class_notice_sms(classroom, notice):
     """Background-এ class-এর সব approved student-এর guardian কে notice SMS পাঠাও"""
+
+    # ✅ Request context এ থাকতেই সব value নিয়ে নাও
+    classroom_id   = classroom.id
+    classroom_name = classroom.name
+    notice_body    = notice.body
+    site           = SiteSettings.objects.first()
+    academy_name   = site.academy_name if site else 'কর্ণফুলী বিজ্ঞান একাডেমি'
+
     def _send():
-        site = SiteSettings.objects.first()
-        academy_name = site.academy_name if site else 'KBA'
-        students = Student.objects.filter(
-            classroom=classroom,
-            is_approved=True,
-        )
-        message = (
-            f"সম্মানিত অভিভাবক,"
-            f"{classroom.name} এর নোটিশ:\n"
-            f"{notice.body}\n"
-            f"-কর্ণফুলী বিজ্ঞান একাডেমি"
-        )
-        for student in students:
-            if student.guardian_phone_1:
-                send_sms(student.guardian_phone_1, message)
-            if student.guardian_phone_2:
-                send_sms(student.guardian_phone_2, message)
+        try:
+            students = Student.objects.filter(
+                classroom_id=classroom_id,  # ✅ object নয়, id দিয়ে query
+                is_approved=True,
+            )
+            message = (
+                f"সম্মানিত অভিভাবক,\n"
+                f"{classroom_name} এর নোটিশ:\n"
+                f"{notice_body}\n"
+                f"-{academy_name}"
+            )
+            for student in students:
+                try:
+                    if student.guardian_phone_1:
+                        send_sms(student.guardian_phone_1, message)
+                    if student.guardian_phone_2:
+                        send_sms(student.guardian_phone_2, message)
+                except Exception as e:
+                    logger.error(f"SMS failed for student {student.id}: {e}")
+        finally:
+            connection.close()  # ✅ DB connection cleanup
 
     thread = threading.Thread(target=_send)
     thread.daemon = True
     thread.start()
 
+
+    
 
 @login_required
 def notice_edit(request, pk):
