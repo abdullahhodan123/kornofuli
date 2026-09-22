@@ -13,121 +13,260 @@ from .utils import update_exam_serials
 from .pdf_utils import build_exam_result_pdf
 from accounts.models import Student, ClassRoom
 from accounts.views import send_sms, teacher_required
+import logging
+from django.db import connection
+
+logger = logging.getLogger(__name__)
+
 
 
 # ─────────────────────────────────────────
 #  SMS Utility
 # ─────────────────────────────────────────
 
-def send_result_sms(exam, students):
-    """Background এ সব guardian কে result SMS পাঠাও"""
-    def _send():
-        results_map = {
-            r.student_id: r for r in
-            Result.objects.filter(student__in=students, exam=exam)
-            .select_related('student')
-            .prefetch_related('mark_entries__subject')
-        }
+# def send_result_sms(exam, students):
+#     """Background এ সব guardian কে result SMS পাঠাও"""
+#     def _send():
+#         results_map = {
+#             r.student_id: r for r in
+#             Result.objects.filter(student__in=students, exam=exam)
+#             .select_related('student')
+#             .prefetch_related('mark_entries__subject')
+#         }
 
-        for student in students:
-            try:
-                result = results_map.get(student.pk)
-                if result is None:
-                    continue
+#         for student in students:
+#             try:
+#                 result = results_map.get(student.pk)
+#                 if result is None:
+#                     continue
 
-                entries = list(result.mark_entries.all())
-                if not entries:
-                    continue
+#                 entries = list(result.mark_entries.all())
+#                 if not entries:
+#                     continue
 
-                # Subject wise marks + grade
-                subject_lines = []
-                for entry in entries:
-                    optional_tag = ' (ঐচ্ছিক)' if entry.subject.is_optional else ''
-                    if entry.is_absent or entry.marks_obtained is None:
-                        subject_lines.append(
-                            f"{entry.subject.name}{optional_tag}: অনুপস্থিত"
-                        )
-                        continue
+#                 # Subject wise marks + grade
+#                 subject_lines = []
+#                 for entry in entries:
+#                     optional_tag = ' (ঐচ্ছিক)' if entry.subject.is_optional else ''
+#                     if entry.is_absent or entry.marks_obtained is None:
+#                         subject_lines.append(
+#                             f"{entry.subject.name}{optional_tag}: অনুপস্থিত"
+#                         )
+#                         continue
 
-                    marks = float(entry.marks_obtained)
-                    full  = float(entry.subject.full_marks)
-                    pct   = (marks / full) * 100
-                    # Grade letter
-                    if pct >= 80:   grade = 'A+'
-                    elif pct >= 70: grade = 'A'
-                    elif pct >= 60: grade = 'A-'
-                    elif pct >= 50: grade = 'B'
-                    elif pct >= 40: grade = 'C'
-                    elif pct >= 33: grade = 'D'
-                    else:           grade = 'F'
+#                     marks = float(entry.marks_obtained)
+#                     full  = float(entry.subject.full_marks)
+#                     pct   = (marks / full) * 100
+#                     # Grade letter
+#                     if pct >= 80:   grade = 'A+'
+#                     elif pct >= 70: grade = 'A'
+#                     elif pct >= 60: grade = 'A-'
+#                     elif pct >= 50: grade = 'B'
+#                     elif pct >= 40: grade = 'C'
+#                     elif pct >= 33: grade = 'D'
+#                     else:           grade = 'F'
 
-                    subject_lines.append(
-                        f"{entry.subject.name}{optional_tag}: {int(marks)}/{int(full)} [{grade}]"
-                    )
+#                     subject_lines.append(
+#                         f"{entry.subject.name}{optional_tag}: {int(marks)}/{int(full)} [{grade}]"
+#                     )
 
-                # Model methods থেকে সরাসরি নিন
-                total    = int(result.total_marks())
-                full     = int(result.total_full_marks())
-                gpa      = result.gpa()
-                grade    = result.letter_grade()
-                status   = "অনুত্তীর্ণ" if result.is_failed() else "উত্তীর্ণ"
+#                 # Model methods থেকে সরাসরি নিন
+#                 total    = int(result.total_marks())
+#                 full     = int(result.total_full_marks())
+#                 gpa      = result.gpa()
+#                 grade    = result.letter_grade()
+#                 status   = "অনুত্তীর্ণ" if result.is_failed() else "উত্তীর্ণ"
 
-                subject_text = "\n".join(subject_lines)
+#                 subject_text = "\n".join(subject_lines)
 
-                message = (
+#                 message = (
 
-# f"প্রিয় অভিভাবক,\n"
-# f"আপনার সন্তানের পরীক্ষার ফলাফল প্রকাশিত হয়েছে।\n\n"
-# f"পরীক্ষা: {exam.name}\n"
-# f"শিক্ষার্থী: {student.full_name}\n"
+# # f"প্রিয় অভিভাবক,\n"
+# # f"আপনার সন্তানের পরীক্ষার ফলাফল প্রকাশিত হয়েছে।\n\n"
+# # f"পরীক্ষা: {exam.name}\n"
+# # f"শিক্ষার্থী: {student.full_name}\n"
 
-# f"------------------\n"
-# f"{subject_text}\n"
-# f"------------------\n"
-# f"মোট নম্বর: {total}/{full}\n"
-# f"GPA: {gpa} | গ্রেড: {grade}\n"
-# f"ফলাফল: {status}\n\n"
-# f"ধন্যবাদান্তে,\n"
-# f"কর্ণফুলী বিজ্ঞান একাডেমি"
-
-
+# # f"------------------\n"
+# # f"{subject_text}\n"
+# # f"------------------\n"
+# # f"মোট নম্বর: {total}/{full}\n"
+# # f"GPA: {gpa} | গ্রেড: {grade}\n"
+# # f"ফলাফল: {status}\n\n"
+# # f"ধন্যবাদান্তে,\n"
+# # f"কর্ণফুলী বিজ্ঞান একাডেমি"
 
 
 
 
 
-    # f"প্রিয় অভিভাবক,\n"
-    # f"{student.full_name}\n"
-    # f"{subject_text}\n"
-    # f"মোট {total}/{full} | GPA {gpa} | {grade}\n"
-    # f"ধন্যবাদ,\n"
-    # f"কর্ণফুলী বিজ্ঞান একাডেমি"
+
+
+#     # f"প্রিয় অভিভাবক,\n"
+#     # f"{student.full_name}\n"
+#     # f"{subject_text}\n"
+#     # f"মোট {total}/{full} | GPA {gpa} | {grade}\n"
+#     # f"ধন্যবাদ,\n"
+#     # f"কর্ণফুলী বিজ্ঞান একাডেমি"
 
 
 
     
-    f"সম্মানিত অভিভাবক,\n"
-    f"{student.full_name} এর ফলাফল:\n"
-    f"পরীক্ষা: {exam.name}\n"
-    f"{subject_text}\n"
-    f"মোট: {total}/{full} | GPA: {gpa} | গ্রেড: {grade} | {status}\n"
-    f"-কর্ণফুলী বিজ্ঞান একাডেমি"
+#     f"সম্মানিত অভিভাবক,\n"
+#     f"{student.full_name} এর ফলাফল:\n"
+#     f"পরীক্ষা: {exam.name}\n"
+#     f"{subject_text}\n"
+#     f"মোট: {total}/{full} | GPA: {gpa} | গ্রেড: {grade} | {status}\n"
+#     f"-কর্ণফুলী বিজ্ঞান একাডেমি"
 
 
-)
+# )
 
 
-                if student.guardian_phone_1:
-                    send_sms(student.guardian_phone_1, message)
-                if student.guardian_phone_2:
-                    send_sms(student.guardian_phone_2, message)
+#                 if student.guardian_phone_1:
+#                     send_sms(student.guardian_phone_1, message)
+#                 if student.guardian_phone_2:
+#                     send_sms(student.guardian_phone_2, message)
 
-            except Exception:
-                pass
+#             except Exception:
+#                 pass
 
-    thread = threading.Thread(target=_send)
+#     thread = threading.Thread(target=_send)
+#     thread.daemon = True
+#     thread.start()
+
+
+def send_result_sms(exam, students):
+    """সব student-এর guardian-কে result SMS পাঠাবে"""
+
+    # QuerySet যেন background thread-এ সমস্যা না করে
+    students = list(students)
+
+    results_map = {
+        r.student_id: r
+        for r in Result.objects.filter(
+            student__in=students,
+            exam=exam
+        )
+        .select_related('student')
+        .prefetch_related('mark_entries__subject')
+    }
+
+    for student in students:
+        try:
+            result = results_map.get(student.pk)
+
+            if result is None:
+                continue
+
+            entries = list(result.mark_entries.all())
+
+            if not entries:
+                continue
+
+            # Subject-wise marks + grade
+            subject_lines = []
+
+            for entry in entries:
+                optional_tag = (
+                    ' (ঐচ্ছিক)'
+                    if entry.subject.is_optional
+                    else ''
+                )
+
+                if entry.is_absent or entry.marks_obtained is None:
+                    subject_lines.append(
+                        f"{entry.subject.name}"
+                        f"{optional_tag}: অনুপস্থিত"
+                    )
+                    continue
+
+                marks = float(entry.marks_obtained)
+                full = float(entry.subject.full_marks)
+
+                pct = (marks / full) * 100
+
+                # Grade calculation
+                if pct >= 80:
+                    grade = 'A+'
+                elif pct >= 70:
+                    grade = 'A'
+                elif pct >= 60:
+                    grade = 'A-'
+                elif pct >= 50:
+                    grade = 'B'
+                elif pct >= 40:
+                    grade = 'C'
+                elif pct >= 33:
+                    grade = 'D'
+                else:
+                    grade = 'F'
+
+                subject_lines.append(
+                    f"{entry.subject.name}"
+                    f"{optional_tag}: "
+                    f"{int(marks)}/{int(full)} [{grade}]"
+                )
+
+            # Result model methods
+            total = int(result.total_marks())
+            full = int(result.total_full_marks())
+            gpa = result.gpa()
+            grade = result.letter_grade()
+
+            status = (
+                "অনুত্তীর্ণ"
+                if result.is_failed()
+                else "উত্তীর্ণ"
+            )
+
+            subject_text = "\n".join(subject_lines)
+
+            # SMS message
+            message = (
+                f"সম্মানিত অভিভাবক,\n"
+                f"{student.full_name} এর ফলাফল:\n"
+                f"পরীক্ষা: {exam.name}\n"
+                f"{subject_text}\n"
+                f"মোট: {total}/{full}\n"
+                f"GPA: {gpa} | গ্রেড: {grade}\n"
+                f"ফলাফল: {status}\n"
+                f"-কর্ণফুলী বিজ্ঞান একাডেমি"
+            )
+
+            # Guardian phone 1
+            if student.guardian_phone_1:
+                send_sms(
+                    student.guardian_phone_1,
+                    message
+                )
+
+            # Guardian phone 2
+            if student.guardian_phone_2:
+                send_sms(
+                    student.guardian_phone_2,
+                    message
+                )
+
+        except Exception as e:
+            logger.error(
+                f"Result SMS failed for student "
+                f"{student.id}: {e}",
+                exc_info=True
+            )
+
+
+def send_result_sms_async(exam, students):
+    """Result SMS background thread-এ পাঠাবে"""
+
+    thread = threading.Thread(
+        target=send_result_sms,
+        args=(exam, students)
+    )
+
     thread.daemon = True
     thread.start()
+
+
 
 
 # ─────────────────────────────────────────
